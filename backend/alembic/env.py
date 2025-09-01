@@ -3,7 +3,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 from app.core.config import settings
-from app.core.database import Base
+from app.core.database import Base, get_database_url
 from app.models import Patent, WatchlistItem, Alert
 
 # this is the Alembic Config object, which provides
@@ -25,7 +25,7 @@ target_metadata = Base.metadata
 # ... etc.
 
 def get_url():
-    return settings.DATABASE_URL
+    return get_database_url()
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

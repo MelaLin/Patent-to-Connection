@@ -28,9 +28,12 @@ COPY --from=frontend-builder /frontend/dist ./backend/app/static
 # Set working directory to backend and add to Python path
 WORKDIR /app/backend
 
+# Make startup script executable
+RUN chmod +x start-docker.sh
+
 # Expose port
 EXPOSE 8000
 
-# Run uvicorn with proper Python path
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run startup script that handles migrations and starts the app
+CMD ["./start-docker.sh"]
 
