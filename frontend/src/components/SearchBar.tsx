@@ -3,8 +3,25 @@ import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export function SearchBar() {
+interface SearchBarProps {
+  onSearch: (query: string) => void;
+  loading?: boolean;
+}
+
+export function SearchBar({ onSearch, loading = false }: SearchBarProps) {
   const [query, setQuery] = useState("");
+
+  const handleSearch = () => {
+    if (query.trim()) {
+      onSearch(query.trim());
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <div className="relative">
@@ -15,7 +32,9 @@ export function SearchBar() {
           placeholder="Search patents (e.g., HVAC, solar panels, wind turbine)"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyPress={handleKeyPress}
           className="pl-10 pr-20 h-12 text-base"
+          disabled={loading}
         />
         {query && (
           <Button
@@ -23,12 +42,17 @@ export function SearchBar() {
             size="sm"
             className="absolute right-16 h-6 w-6 p-0"
             onClick={() => setQuery("")}
+            disabled={loading}
           >
             <X className="h-3 w-3" />
           </Button>
         )}
-        <Button className="absolute right-1 h-10 px-4">
-          Search
+        <Button 
+          className="absolute right-1 h-10 px-4"
+          onClick={handleSearch}
+          disabled={loading || !query.trim()}
+        >
+          {loading ? "Searching..." : "Search"}
         </Button>
       </div>
     </div>
