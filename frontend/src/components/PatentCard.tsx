@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Eye, Share, Bookmark, Linkedin } from "lucide-react";
+import { ExternalLink, Eye, Share, Bookmark, Linkedin, Search } from "lucide-react";
 import { useState } from "react";
 
 interface Patent {
@@ -18,9 +18,10 @@ interface Patent {
 interface PatentCardProps {
   patent: Patent;
   onDetails: () => void;
+  onInventorClick?: (inventor: { name: string; linkedin_url?: string }) => void;
 }
 
-export function PatentCard({ patent, onDetails }: PatentCardProps) {
+export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
 
@@ -28,8 +29,13 @@ export function PatentCard({ patent, onDetails }: PatentCardProps) {
   const needsExpansion = patent.abstract.length > 250;
 
   const handleInventorClick = (inventor: { name: string; linkedin_url?: string }) => {
-    if (inventor.linkedin_url) {
-      window.open(inventor.linkedin_url, '_blank');
+    if (onInventorClick) {
+      onInventorClick(inventor);
+    } else {
+      // Fallback behavior if no callback provided
+      if (inventor.linkedin_url) {
+        window.open(inventor.linkedin_url, '_blank');
+      }
     }
   };
 
@@ -90,22 +96,25 @@ export function PatentCard({ patent, onDetails }: PatentCardProps) {
               {patent.inventors.map((inventor, index) => (
                 <div key={`${inventor.name}-${index}`} className="flex items-center gap-1">
                   <Badge
-                    variant={inventor.linkedin_url ? "default" : "outline"}
-                    className={`cursor-pointer transition-colors ${
-                      inventor.linkedin_url 
-                        ? "hover:bg-primary/90 hover:text-primary-foreground" 
-                        : "hover:bg-accent"
-                    }`}
+                    variant="outline"
+                    className="cursor-pointer transition-all duration-200 hover:bg-primary hover:text-primary-foreground hover:shadow-sm border-dashed border-primary/50 hover:border-primary"
                     onClick={() => handleInventorClick(inventor)}
                   >
-                    {inventor.name}
-                    {inventor.linkedin_url && (
-                      <Linkedin className="ml-1 h-3 w-3" />
-                    )}
+                    <span className="flex items-center gap-1">
+                      {inventor.name}
+                      {inventor.linkedin_url ? (
+                        <Linkedin className="h-3 w-3" />
+                      ) : (
+                        <Search className="h-3 w-3" />
+                      )}
+                    </span>
                   </Badge>
                 </div>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Click inventor names to view LinkedIn profiles or search for them
+            </p>
           </div>
         )}
 

@@ -2,7 +2,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ExternalLink, Bookmark, Bell, X } from "lucide-react";
+import { ExternalLink, Bookmark, Bell, X, Linkedin, Search } from "lucide-react";
 
 interface Patent {
   patent_id: string;
@@ -35,6 +35,29 @@ export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) 
   const handleLinkedInClick = (url: string) => {
     if (url) {
       window.open(url, '_blank');
+    }
+  };
+
+  // Helper function to generate LinkedIn search URL
+  const generateLinkedInSearchUrl = (inventorName: string, patentTitle: string): string => {
+    // Clean up the inventor name and patent title for search
+    const cleanName = inventorName.replace(/[^\w\s]/g, '').trim();
+    const cleanTitle = patentTitle.replace(/[^\w\s]/g, '').trim();
+    
+    // Create search query combining inventor name and patent topic
+    const searchQuery = encodeURIComponent(`${cleanName} ${cleanTitle}`);
+    
+    return `https://www.linkedin.com/search/results/people/?keywords=${searchQuery}`;
+  };
+
+  const handleInventorClick = (inventor: { name: string; linkedin_url?: string }) => {
+    if (inventor.linkedin_url) {
+      // Open direct LinkedIn URL
+      window.open(inventor.linkedin_url, '_blank');
+    } else {
+      // Open LinkedIn search for the inventor
+      const searchUrl = generateLinkedInSearchUrl(inventor.name, patent.title);
+      window.open(searchUrl, '_blank');
     }
   };
 
@@ -76,28 +99,48 @@ export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) 
             <div className="space-y-3">
               <h3 className="font-semibold text-base">Inventors</h3>
               <div className="space-y-3">
-                {patent.inventors.map((inventor) => (
+                {patent.inventors.map((inventor, index) => (
                   <div
-                    key={inventor.name}
+                    key={`${inventor.name}-${index}`}
                     className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                   >
-                    <div>
-                      <p className="font-medium">{inventor.name}</p>
-                      <p className="text-xs text-muted-foreground">Inventor</p>
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="font-medium">{inventor.name}</p>
+                        <p className="text-xs text-muted-foreground">Inventor</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {inventor.linkedin_url ? (
+                          <Linkedin className="h-4 w-4 text-blue-600" />
+                        ) : (
+                          <Search className="h-4 w-4 text-gray-500" />
+                        )}
+                      </div>
                     </div>
-                    {inventor.linkedin_url && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleLinkedInClick(inventor.linkedin_url!)}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        LinkedIn
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleInventorClick(inventor)}
+                      className="flex items-center gap-2"
+                    >
+                      {inventor.linkedin_url ? (
+                        <>
+                          <Linkedin className="h-4 w-4" />
+                          LinkedIn
+                        </>
+                      ) : (
+                        <>
+                          <Search className="h-4 w-4" />
+                          Search LinkedIn
+                        </>
+                      )}
+                    </Button>
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground">
+                Click inventor names to view LinkedIn profiles or search for them
+              </p>
             </div>
           )}
 

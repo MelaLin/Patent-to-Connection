@@ -100,6 +100,18 @@ const Search = () => {
     });
   };
 
+  // Helper function to generate LinkedIn search URL
+  const generateLinkedInSearchUrl = (inventorName: string, patentTitle: string): string => {
+    // Clean up the inventor name and patent title for search
+    const cleanName = inventorName.replace(/[^\w\s]/g, '').trim();
+    const cleanTitle = patentTitle.replace(/[^\w\s]/g, '').trim();
+    
+    // Create search query combining inventor name and patent topic
+    const searchQuery = encodeURIComponent(`${cleanName} ${cleanTitle}`);
+    
+    return `https://www.linkedin.com/search/results/people/?keywords=${searchQuery}`;
+  };
+
   const EmptyState = () => (
     <Card className="patent-card p-8 text-center">
       <div className="flex flex-col items-center gap-4">
@@ -210,6 +222,16 @@ const Search = () => {
                         google_patents_url: patent.patent_link
                       }}
                       onDetails={() => handlePatentDetails(patent)}
+                      onInventorClick={(inventor) => {
+                        if (inventor.linkedin_url) {
+                          // Open direct LinkedIn URL
+                          window.open(inventor.linkedin_url, '_blank');
+                        } else {
+                          // Open LinkedIn search for the inventor
+                          const searchUrl = generateLinkedInSearchUrl(inventor.name, patent.title);
+                          window.open(searchUrl, '_blank');
+                        }
+                      }}
                     />
                   );
                 })}
