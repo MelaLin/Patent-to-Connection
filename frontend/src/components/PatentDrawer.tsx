@@ -38,14 +38,17 @@ export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) 
     }
   };
 
-  // Helper function to generate LinkedIn search URL
+  // Helper function to generate LinkedIn search URL with focused query
   const generateLinkedInSearchUrl = (inventorName: string, patentTitle: string): string => {
-    // Clean up the inventor name and patent title for search
+    // Clean up the inventor name
     const cleanName = inventorName.replace(/[^\w\s]/g, '').trim();
-    const cleanTitle = patentTitle.replace(/[^\w\s]/g, '').trim();
     
-    // Create search query combining inventor name and patent topic
-    const searchQuery = encodeURIComponent(`${cleanName} ${cleanTitle}`);
+    // Extract first two words from patent title
+    const titleWords = patentTitle.split(/\s+/).slice(0, 2).join(' ');
+    const cleanTitleWords = titleWords.replace(/[^\w\s]/g, '').trim();
+    
+    // Create focused search query: inventor name + first two words of title
+    const searchQuery = encodeURIComponent(`${cleanName} ${cleanTitleWords}`);
     
     return `https://www.linkedin.com/search/results/people/?keywords=${searchQuery}`;
   };
@@ -55,7 +58,7 @@ export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) 
       // Open direct LinkedIn URL
       window.open(inventor.linkedin_url, '_blank');
     } else {
-      // Open LinkedIn search for the inventor
+      // Open LinkedIn search for the inventor with focused query
       const searchUrl = generateLinkedInSearchUrl(inventor.name, patent.title);
       window.open(searchUrl, '_blank');
     }
