@@ -1,6 +1,7 @@
 import httpx
 import logging
 import json
+import urllib.parse
 from typing import Dict, List, Optional
 from fastapi import HTTPException
 from app.core.config import settings
@@ -15,7 +16,7 @@ class SerpAPIService:
     
     async def search_patents(self, query: str, limit: int = 10) -> List[Dict]:
         """Search for patents using SerpAPI"""
-        logger.info(f"Searching patents with query: {query}, limit: {limit}")
+        logger.info(f"Searching patents with query: '{query}', limit: {limit}")
         
         if not self.api_key:
             logger.error("SERPAPI_API_KEY not configured")
@@ -24,20 +25,34 @@ class SerpAPIService:
                 detail="Missing SERPAPI_API_KEY"
             )
         
+        # Ensure query is properly encoded
+        encoded_query = urllib.parse.quote(query.strip())
+        logger.info(f"Encoded query: '{encoded_query}'")
+        
+        # Try different parameter combinations for better results
         params = {
             "api_key": self.api_key,
             "engine": "google_patents",
-            "q": query,
-            "num": limit
+            "q": query.strip(),
+            "num": limit,
+            "hl": "en",  # Language
+            "gl": "us"   # Country
         }
         
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 logger.info(f"Making request to SerpAPI: {self.base_url}")
+                logger.info(f"Request params: {params}")
+                
+                # Log the actual URL being called
+                url = f"{self.base_url}?api_key={self.api_key}&engine=google_patents&q={encoded_query}&num={limit}&hl=en&gl=us"
+                logger.info(f"Actual URL (for debugging): {url}")
+                
                 response = await client.get(self.base_url, params=params)
                 
-                # Log response status
+                # Log response status and headers
                 logger.info(f"SerpAPI response status: {response.status_code}")
+                logger.info(f"SerpAPI response headers: {dict(response.headers)}")
                 
                 # Check if response is successful
                 if response.status_code != 200:
@@ -46,8 +61,11 @@ class SerpAPIService:
                         error_data = response.json()
                         if "error" in error_data:
                             error_detail = f"SerpAPI error: {error_data['error']}"
+                        logger.error(f"SerpAPI error response: {json.dumps(error_data, indent=2)}")
                     except:
-                        error_detail = f"SerpAPI returned status {response.status_code}: {response.text}"
+                        error_text = response.text[:500]  # Limit error text length
+                        error_detail = f"SerpAPI returned status {response.status_code}: {error_text}"
+                        logger.error(f"SerpAPI error response text: {error_text}")
                     
                     logger.error(f"SerpAPI request failed: {error_detail}")
                     raise HTTPException(
@@ -60,7 +78,7 @@ class SerpAPIService:
                     data = response.json()
                 except Exception as e:
                     logger.error(f"Failed to parse SerpAPI JSON response: {str(e)}")
-                    logger.error(f"Raw response text: {response.text}")
+                    logger.error(f"Raw response text: {response.text[:1000]}")  # Limit log length
                     raise HTTPException(
                         status_code=502,
                         detail=f"Failed to parse SerpAPI response: {str(e)}"
@@ -71,6 +89,7 @@ class SerpAPIService:
                     logger.debug(f"SerpAPI raw response: {json.dumps(data, indent=2)}")
                 
                 logger.info(f"SerpAPI response received, processing data")
+                logger.info(f"Available keys in response: {list(data.keys())}")
                 
                 # Check if response contains an error field
                 if "error" in data:
@@ -86,12 +105,14 @@ class SerpAPIService:
                 organic_results = data.get("organic_results", [])
                 if not organic_results:
                     logger.info(f"No organic_results found in SerpAPI response")
-                    logger.info(f"Available keys in response: {list(data.keys())}")
-                    # Return empty results instead of raising error
-                    return []
+                    logger.info(f"Response structure: {json.dumps(data, indent=2)}")
+                    
+                    # Try alternative search approach if no results
+                    logger.info("Trying alternative search approach...")
+                    return await self._try_alternative_search(query, limit)
                 
                 patents = []
-                for result in organic_results:
+                for i, result in enumerate(organic_results):
                     try:
                         patent = {
                             "title": result.get("title", ""),
@@ -103,11 +124,12 @@ class SerpAPIService:
                             "pdf": result.get("pdf", "")
                         }
                         patents.append(patent)
+                        logger.debug(f"Processed patent {i+1}: {patent.get('title', 'No title')}")
                     except Exception as e:
-                        logger.warning(f"Error processing patent result: {str(e)}")
+                        logger.warning(f"Error processing patent result {i+1}: {str(e)}")
                         continue
                 
-                logger.info(f"Found {len(patents)} patents")
+                logger.info(f"Successfully processed {len(patents)} patents from {len(organic_results)} results")
                 return patents
                 
         except httpx.RequestError as e:
@@ -132,6 +154,56 @@ class SerpAPIService:
                 detail=f"Unexpected error in SerpAPI search: {str(e)}"
             )
     
+    async def _try_alternative_search(self, query: str, limit: int) -> List[Dict]:
+        """Try alternative search approach when primary search fails"""
+        logger.info(f"Trying alternative search for: '{query}'")
+        
+        # Try with different parameters
+        alternative_params = {
+            "api_key": self.api_key,
+            "engine": "google_patents",
+            "q": query.strip(),
+            "num": limit,
+            "hl": "en",
+            "gl": "us",
+            "safe": "off"  # Disable safe search
+        }
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(self.base_url, params=alternative_params)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    organic_results = data.get("organic_results", [])
+                    
+                    if organic_results:
+                        logger.info(f"Alternative search found {len(organic_results)} results")
+                        patents = []
+                        for result in organic_results:
+                            try:
+                                patent = {
+                                    "title": result.get("title", ""),
+                                    "snippet": result.get("snippet", ""),
+                                    "publication_date": result.get("publication_date", ""),
+                                    "inventor": result.get("inventor", ""),
+                                    "assignee": result.get("assignee", ""),
+                                    "patent_link": result.get("link", ""),
+                                    "pdf": result.get("pdf", "")
+                                }
+                                patents.append(patent)
+                            except Exception as e:
+                                logger.warning(f"Error processing alternative patent result: {str(e)}")
+                                continue
+                        return patents
+                
+                logger.info("Alternative search also failed, returning empty results")
+                return []
+                
+        except Exception as e:
+            logger.error(f"Alternative search failed: {str(e)}")
+            return []
+    
     async def get_patent_details(self, patent_number: str) -> Optional[Dict]:
         """Get detailed information about a specific patent"""
         logger.info(f"Getting patent details for: {patent_number}")
@@ -150,7 +222,7 @@ class SerpAPIService:
         }
         
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 logger.info(f"Making request to SerpAPI for patent: {patent_number}")
                 response = await client.get(self.base_url, params=params)
                 
