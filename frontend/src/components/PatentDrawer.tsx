@@ -1,8 +1,8 @@
+import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ExternalLink, Bookmark, Bell, X } from "lucide-react";
-import { useState } from "react";
 
 interface Patent {
   patent_id: string;
@@ -22,9 +22,21 @@ interface PatentDrawerProps {
 }
 
 export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) {
-  const [isWatched, setIsWatched] = useState(false);
+  const [isWatched, setIsWatched] = React.useState(false);
 
   if (!patent) return null;
+
+  const handleGooglePatentsClick = () => {
+    if (patent.google_patents_url) {
+      window.open(patent.google_patents_url, '_blank');
+    }
+  };
+
+  const handleLinkedInClick = (url: string) => {
+    if (url) {
+      window.open(url, '_blank');
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -60,32 +72,34 @@ export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) 
           </div>
 
           {/* Inventors */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-base">Inventors</h3>
+          {patent.inventors && patent.inventors.length > 0 && (
             <div className="space-y-3">
-              {patent.inventors.map((inventor) => (
-                <div
-                  key={inventor.name}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium">{inventor.name}</p>
-                    <p className="text-xs text-muted-foreground">Inventor</p>
+              <h3 className="font-semibold text-base">Inventors</h3>
+              <div className="space-y-3">
+                {patent.inventors.map((inventor) => (
+                  <div
+                    key={inventor.name}
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                  >
+                    <div>
+                      <p className="font-medium">{inventor.name}</p>
+                      <p className="text-xs text-muted-foreground">Inventor</p>
+                    </div>
+                    {inventor.linkedin_url && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleLinkedInClick(inventor.linkedin_url!)}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        LinkedIn
+                      </Button>
+                    )}
                   </div>
-                  {inventor.linkedin_url && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(inventor.linkedin_url, '_blank')}
-                    >
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      LinkedIn
-                    </Button>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Assignee Details */}
           <div className="space-y-3">
@@ -146,14 +160,16 @@ export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) 
               </Button>
             </div>
             
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => window.open(patent.google_patents_url, '_blank')}
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              View on Google Patents
-            </Button>
+            {patent.google_patents_url && (
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={handleGooglePatentsClick}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                View on Google Patents
+              </Button>
+            )}
           </div>
         </div>
       </SheetContent>

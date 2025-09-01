@@ -1,4 +1,4 @@
-import { useState } from "react";
+import * as React from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ onSearch, loading = false }: SearchBarProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = React.useState("");
 
   const handleSearch = () => {
     if (query.trim()) {
@@ -17,7 +17,7 @@ export function SearchBar({ onSearch, loading = false }: SearchBarProps) {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
@@ -32,7 +32,7 @@ export function SearchBar({ onSearch, loading = false }: SearchBarProps) {
           placeholder="Search patents (e.g., HVAC, solar panels, wind turbine)"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           className="pl-10 pr-20 h-12 text-base"
           disabled={loading}
         />
@@ -47,7 +47,7 @@ export function SearchBar({ onSearch, loading = false }: SearchBarProps) {
             <X className="h-3 w-3" />
           </Button>
         )}
-        <Button 
+        <Button
           className="absolute right-1 h-10 px-4"
           onClick={handleSearch}
           disabled={loading || !query.trim()}
