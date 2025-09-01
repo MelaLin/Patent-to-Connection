@@ -55,7 +55,16 @@ class SerpAPIService:
                         detail=error_detail
                     )
                 
-                data = response.json()
+                # Parse JSON response with error handling
+                try:
+                    data = response.json()
+                except Exception as e:
+                    logger.error(f"Failed to parse SerpAPI JSON response: {str(e)}")
+                    logger.error(f"Raw response text: {response.text}")
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Failed to parse SerpAPI response: {str(e)}"
+                    )
                 
                 # Log raw response when DEBUG is enabled
                 if settings.DEBUG:
@@ -63,18 +72,25 @@ class SerpAPIService:
                 
                 logger.info(f"SerpAPI response received, processing data")
                 
-                # Check if organic_results exists in the response
-                if "organic_results" not in data:
-                    logger.error(f"Invalid SerpAPI response structure: missing organic_results")
-                    logger.error(f"Available keys: {list(data.keys())}")
+                # Check if response contains an error field
+                if "error" in data:
+                    error_message = data.get("error", "Unknown SerpAPI error")
+                    logger.error(f"SerpAPI returned error: {error_message}")
+                    logger.error(f"Full SerpAPI error response: {json.dumps(data, indent=2)}")
                     raise HTTPException(
                         status_code=502,
-                        detail="Invalid SerpAPI response"
+                        detail=error_message
                     )
                 
-                patents = []
+                # Safely check for organic_results
                 organic_results = data.get("organic_results", [])
+                if not organic_results:
+                    logger.info(f"No organic_results found in SerpAPI response")
+                    logger.info(f"Available keys in response: {list(data.keys())}")
+                    # Return empty results instead of raising error
+                    return []
                 
+                patents = []
                 for result in organic_results:
                     try:
                         patent = {
@@ -106,6 +122,9 @@ class SerpAPIService:
                 status_code=502,
                 detail=f"HTTP error when calling SerpAPI: {str(e)}"
             )
+        except HTTPException:
+            # Re-raise HTTPExceptions as they already have proper status codes
+            raise
         except Exception as e:
             logger.error(f"Unexpected error in SerpAPI search: {str(e)}")
             raise HTTPException(
@@ -154,7 +173,16 @@ class SerpAPIService:
                         detail=error_detail
                     )
                 
-                data = response.json()
+                # Parse JSON response with error handling
+                try:
+                    data = response.json()
+                except Exception as e:
+                    logger.error(f"Failed to parse SerpAPI JSON response: {str(e)}")
+                    logger.error(f"Raw response text: {response.text}")
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Failed to parse SerpAPI response: {str(e)}"
+                    )
                 
                 # Log raw response when DEBUG is enabled
                 if settings.DEBUG:
@@ -162,31 +190,34 @@ class SerpAPIService:
                 
                 logger.info(f"SerpAPI response received, processing data")
                 
-                # Check if organic_results exists in the response
-                if "organic_results" not in data:
-                    logger.error(f"Invalid SerpAPI response structure: missing organic_results")
-                    logger.error(f"Available keys: {list(data.keys())}")
+                # Check if response contains an error field
+                if "error" in data:
+                    error_message = data.get("error", "Unknown SerpAPI error")
+                    logger.error(f"SerpAPI returned error: {error_message}")
+                    logger.error(f"Full SerpAPI error response: {json.dumps(data, indent=2)}")
                     raise HTTPException(
                         status_code=502,
-                        detail="Invalid SerpAPI response"
+                        detail=error_message
                     )
                 
+                # Safely check for organic_results
                 organic_results = data.get("organic_results", [])
-                if organic_results:
-                    result = organic_results[0]
-                    logger.info(f"Found patent details for: {patent_number}")
-                    return {
-                        "title": result.get("title", ""),
-                        "snippet": result.get("snippet", ""),
-                        "publication_date": result.get("publication_date", ""),
-                        "inventor": result.get("inventor", ""),
-                        "assignee": result.get("assignee", ""),
-                        "patent_link": result.get("link", ""),
-                        "pdf": result.get("pdf", "")
-                    }
+                if not organic_results:
+                    logger.info(f"No organic_results found in SerpAPI response")
+                    logger.info(f"Available keys in response: {list(data.keys())}")
+                    return None
                 
-                logger.info(f"No patent details found for: {patent_number}")
-                return None
+                result = organic_results[0]
+                logger.info(f"Found patent details for: {patent_number}")
+                return {
+                    "title": result.get("title", ""),
+                    "snippet": result.get("snippet", ""),
+                    "publication_date": result.get("publication_date", ""),
+                    "inventor": result.get("inventor", ""),
+                    "assignee": result.get("assignee", ""),
+                    "patent_link": result.get("link", ""),
+                    "pdf": result.get("pdf", "")
+                }
                 
         except httpx.RequestError as e:
             logger.error(f"Network error when calling SerpAPI: {str(e)}")
@@ -200,6 +231,9 @@ class SerpAPIService:
                 status_code=502,
                 detail=f"HTTP error when calling SerpAPI: {str(e)}"
             )
+        except HTTPException:
+            # Re-raise HTTPExceptions as they already have proper status codes
+            raise
         except Exception as e:
             logger.error(f"Unexpected error in SerpAPI patent details: {str(e)}")
             raise HTTPException(
