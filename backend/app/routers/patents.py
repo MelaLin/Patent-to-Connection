@@ -95,8 +95,17 @@ async def search_patents_serpapi(
     """Search patents using SerpAPI"""
     try:
         patents = await serpapi_service.search_patents(query, limit)
-        return {"patents": patents, "query": query, "count": len(patents)}
+        return {
+            "results": patents,
+            "query": query,
+            "count": len(patents),
+            "source": "serpapi"
+        }
+    except HTTPException:
+        # Re-raise HTTPExceptions as they already have proper status codes
+        raise
     except Exception as e:
+        # Handle any other unexpected errors
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/patents/search/patentsview")
