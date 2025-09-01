@@ -25,6 +25,15 @@ const Search = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Sort patents by publication date (most recent first)
+  const sortPatentsByDate = (patents: Patent[]): Patent[] => {
+    return [...patents].sort((a, b) => {
+      const dateA = a.publication_date ? new Date(a.publication_date).getTime() : 0;
+      const dateB = b.publication_date ? new Date(b.publication_date).getTime() : 0;
+      return dateB - dateA; // Descending order (most recent first)
+    });
+  };
+
   const searchPatents = async (query: string) => {
     setLoading(true);
     setError(null);
@@ -46,8 +55,10 @@ const Search = () => {
       
       // Check if data.results exists and is an array
       if (data.results && Array.isArray(data.results)) {
-        setPatents(data.results);
-        console.log(`Found ${data.results.length} patents`);
+        // Sort patents by publication date (most recent first)
+        const sortedPatents = sortPatentsByDate(data.results);
+        setPatents(sortedPatents);
+        console.log(`Found ${sortedPatents.length} patents, sorted by date`);
       } else {
         console.error('Invalid response format:', data);
         setPatents([]);
@@ -65,6 +76,28 @@ const Search = () => {
   const handlePatentDetails = (patent: Patent) => {
     setSelectedPatent(patent);
     setDrawerOpen(true);
+  };
+
+  // Helper function to parse inventor string and extract LinkedIn URLs
+  const parseInventors = (inventorString: string): { name: string; linkedin_url?: string }[] => {
+    if (!inventorString) return [];
+    
+    // Split by common separators and clean up
+    const inventors = inventorString
+      .split(/[,;]/)
+      .map(inv => inv.trim())
+      .filter(inv => inv.length > 0);
+    
+    return inventors.map(inventor => {
+      // Check if the inventor string contains a LinkedIn URL
+      const linkedinMatch = inventor.match(/\[(https?:\/\/[^\]]+)\]/);
+      if (linkedinMatch) {
+        const linkedinUrl = linkedinMatch[1];
+        const name = inventor.replace(/\[https?:\/\/[^\]]+\]/, '').trim();
+        return { name, linkedin_url: linkedinUrl };
+      }
+      return { name: inventor };
+    });
   };
 
   const EmptyState = () => (
@@ -152,7 +185,7 @@ const Search = () => {
             <>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  Found {patents.length} patents
+                  Found {patents.length} patents (sorted by most recent)
                 </p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm">Save Query</Button>
@@ -161,22 +194,25 @@ const Search = () => {
               </div>
               
               <div className="grid gap-6">
-                {patents.map((patent, index) => (
-                  <PatentCard
-                    key={`${patent.title}-${index}`}
-                    patent={{
-                      patent_id: patent.patent_link || `patent-${index}`,
-                      title: patent.title,
-                      abstract: patent.snippet,
-                      assignee: patent.assignee,
-                      inventors: patent.inventor ? [{ name: patent.inventor }] : [],
-                      year: patent.publication_date ? new Date(patent.publication_date).getFullYear() : undefined,
-                      jurisdiction: "US",
-                      google_patents_url: patent.patent_link
-                    }}
-                    onDetails={() => handlePatentDetails(patent)}
-                  />
-                ))}
+                {patents.map((patent, index) => {
+                  const inventors = parseInventors(patent.inventor);
+                  return (
+                    <PatentCard
+                      key={`${patent.title}-${index}`}
+                      patent={{
+                        patent_id: patent.patent_link || `patent-${index}`,
+                        title: patent.title,
+                        abstract: patent.snippet,
+                        assignee: patent.assignee,
+                        inventors: inventors,
+                        year: patent.publication_date ? new Date(patent.publication_date).getFullYear() : undefined,
+                        jurisdiction: "US",
+                        google_patents_url: patent.patent_link
+                      }}
+                      onDetails={() => handlePatentDetails(patent)}
+                    />
+                  );
+                })}
               </div>
             </>
           )}
@@ -189,7 +225,7 @@ const Search = () => {
           title: selectedPatent.title,
           abstract: selectedPatent.snippet,
           assignee: selectedPatent.assignee,
-          inventors: selectedPatent.inventor ? [{ name: selectedPatent.inventor }] : [],
+          inventors: parseInventors(selectedPatent.inventor),
           year: selectedPatent.publication_date ? new Date(selectedPatent.publication_date).getFullYear() : undefined,
           jurisdiction: "US",
           google_patents_url: selectedPatent.patent_link

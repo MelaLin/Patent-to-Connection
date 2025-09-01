@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Eye, Share, Bookmark } from "lucide-react";
+import { ExternalLink, Eye, Share, Bookmark, Linkedin } from "lucide-react";
 import { useState } from "react";
 
 interface Patent {
@@ -26,6 +26,12 @@ export function PatentCard({ patent, onDetails }: PatentCardProps) {
 
   const abstractPreview = patent.abstract.slice(0, 250);
   const needsExpansion = patent.abstract.length > 250;
+
+  const handleInventorClick = (inventor: { name: string; linkedin_url?: string }) => {
+    if (inventor.linkedin_url) {
+      window.open(inventor.linkedin_url, '_blank');
+    }
+  };
 
   return (
     <Card className="patent-card">
@@ -75,26 +81,33 @@ export function PatentCard({ patent, onDetails }: PatentCardProps) {
         </div>
 
         {/* Inventors */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Inventors
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {patent.inventors.map((inventor) => (
-              <Badge
-                key={inventor.name}
-                variant="outline"
-                className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => inventor.linkedin_url && window.open(inventor.linkedin_url, '_blank')}
-              >
-                {inventor.name}
-                {inventor.linkedin_url && (
-                  <ExternalLink className="ml-1 h-3 w-3" />
-                )}
-              </Badge>
-            ))}
+        {patent.inventors && patent.inventors.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Inventors
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {patent.inventors.map((inventor, index) => (
+                <div key={`${inventor.name}-${index}`} className="flex items-center gap-1">
+                  <Badge
+                    variant={inventor.linkedin_url ? "default" : "outline"}
+                    className={`cursor-pointer transition-colors ${
+                      inventor.linkedin_url 
+                        ? "hover:bg-primary/90 hover:text-primary-foreground" 
+                        : "hover:bg-accent"
+                    }`}
+                    onClick={() => handleInventorClick(inventor)}
+                  >
+                    {inventor.name}
+                    {inventor.linkedin_url && (
+                      <Linkedin className="ml-1 h-3 w-3" />
+                    )}
+                  </Badge>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Assignee and Year */}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
