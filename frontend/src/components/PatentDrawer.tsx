@@ -19,9 +19,10 @@ interface PatentDrawerProps {
   patent: Patent | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  searchQuery?: string;
 }
 
-export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) {
+export function PatentDrawer({ patent, open, onOpenChange, searchQuery = "" }: PatentDrawerProps) {
   const [isWatched, setIsWatched] = React.useState(false);
 
   if (!patent) return null;
@@ -38,19 +39,29 @@ export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) 
     }
   };
 
-  // Helper function to generate LinkedIn search URL with focused query
-  const generateLinkedInSearchUrl = (inventorName: string, patentTitle: string): string => {
+  // Helper function to extract a single keyword from the search query
+  const extractKeywordFromQuery = (query: string): string => {
+    // Clean the query and get the first meaningful word
+    const cleanQuery = query.toLowerCase().trim();
+    const words = cleanQuery.split(/\s+/).filter(word => word.length > 0);
+    
+    // Return the first word, or a default if no words found
+    return words.length > 0 ? words[0] : "patent";
+  };
+
+  // Helper function to generate LinkedIn search URL with inventor name + keyword
+  const generateLinkedInSearchUrl = (inventorName: string, searchQuery: string): string => {
     // Clean up the inventor name
     const cleanName = inventorName.replace(/[^\w\s]/g, '').trim();
     
-    // Extract first two words from patent title
-    const titleWords = patentTitle.split(/\s+/).slice(0, 2).join(' ');
-    const cleanTitleWords = titleWords.replace(/[^\w\s]/g, '').trim();
+    // Extract a single keyword from the search query
+    const keyword = extractKeywordFromQuery(searchQuery);
     
-    // Create focused search query: inventor name + first two words of title
-    const searchQuery = encodeURIComponent(`${cleanName} ${cleanTitleWords}`);
+    // Create focused search query: inventor name + keyword
+    const searchQueryString = encodeURIComponent(`${cleanName} ${keyword}`);
     
-    return `https://www.linkedin.com/search/results/people/?keywords=${searchQuery}`;
+    // Try to point to the first result directly, fallback to search results page
+    return `https://www.linkedin.com/search/results/people/?keywords=${searchQueryString}&origin=GLOBAL_SEARCH_HEADER`;
   };
 
   const handleInventorClick = (inventor: { name: string; linkedin_url?: string }) => {
@@ -58,8 +69,8 @@ export function PatentDrawer({ patent, open, onOpenChange }: PatentDrawerProps) 
       // Open direct LinkedIn URL
       window.open(inventor.linkedin_url, '_blank');
     } else {
-      // Open LinkedIn search for the inventor with focused query
-      const searchUrl = generateLinkedInSearchUrl(inventor.name, patent.title);
+      // Open LinkedIn search for the inventor with keyword from search query
+      const searchUrl = generateLinkedInSearchUrl(inventor.name, searchQuery);
       window.open(searchUrl, '_blank');
     }
   };
