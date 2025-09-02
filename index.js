@@ -389,6 +389,47 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Debug endpoint to see raw SerpAPI response
+app.get('/api/debug/serpapi-raw', async (req, res) => {
+  try {
+    const { query = 'smartphone' } = req.query;
+    
+    if (!SERPAPI_KEY || SERPAPI_KEY === 'your_serpapi_key_here') {
+      return res.json({
+        error: 'SerpAPI key not configured',
+        note: 'This endpoint requires a real SerpAPI key'
+      });
+    }
+
+    const serpApiParams = {
+      api_key: SERPAPI_KEY,
+      engine: 'google_patents',
+      q: query,
+      num: 5
+    };
+
+    console.log('Debug: Calling SerpAPI with params:', { ...serpApiParams, api_key: '[HIDDEN]' });
+
+    const serpResponse = await axios.get(SERPAPI_BASE_URL, { params: serpApiParams });
+    
+    res.json({
+      success: true,
+      query: query,
+      serpapi_response: serpResponse.data,
+      response_keys: Object.keys(serpResponse.data || {}),
+      has_patents_results: !!(serpResponse.data && serpResponse.data.patents_results),
+      patents_results_length: serpResponse.data?.patents_results?.length || 0
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+  }
+});
+
 // Debug endpoint for SerpAPI configuration
 app.get('/api/debug/serpapi', (req, res) => {
   res.json({
