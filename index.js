@@ -714,20 +714,33 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
 app.delete('/api/watchlist/patents/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`Attempting to delete patent with ID: ${id}`);
+    
     const watchlist = await readWatchlistData();
+    console.log(`Current watchlist has ${watchlist.patents.length} patents`);
     
     const patentIndex = watchlist.patents.findIndex(patent => patent.id === id);
+    console.log(`Patent index: ${patentIndex}`);
+    
     if (patentIndex === -1) {
+      console.log(`Patent with ID ${id} not found`);
       return res.status(404).json({ success: false, error: 'Patent not found' });
     }
     
     watchlist.patents.splice(patentIndex, 1);
-    await writeWatchlistData(watchlist);
+    console.log(`Patent removed, now have ${watchlist.patents.length} patents`);
     
-    res.json({ success: true, message: 'Patent deleted successfully' });
+    const writeResult = await writeWatchlistData(watchlist);
+    console.log(`Write result: ${writeResult}`);
+    
+    if (writeResult) {
+      res.json({ success: true, message: 'Patent deleted successfully' });
+    } else {
+      res.status(500).json({ success: false, error: 'Failed to write watchlist data' });
+    }
   } catch (error) {
     console.error('Error deleting patent:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete patent' });
+    res.status(500).json({ success: false, error: 'Failed to delete patent', details: error.message });
   }
 });
 
