@@ -35,6 +35,8 @@ const Search = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [currentSearchQuery, setCurrentSearchQuery] = useState<string>("");
   const [isSavingQuery, setIsSavingQuery] = useState(false);
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [hasMoreResults, setHasMoreResults] = useState(true);
   const [currentFilters, setCurrentFilters] = useState<Filters>({
     yearRange: [2020, 2024],
     selectedAssignees: [],
@@ -51,11 +53,12 @@ const Search = () => {
     });
   };
 
-  const searchPatents = async (query: string) => {
+  const searchPatents = async (query: string, offset = 0) => {
     setLoading(true);
     setError(null);
     setHasSearched(true);
     setCurrentSearchQuery(query);
+    setCurrentOffset(offset);
 
     try {
       console.log(`Searching for: ${query} with filters:`, currentFilters);
@@ -63,7 +66,8 @@ const Search = () => {
       // Build URL with query parameters
       const params = new URLSearchParams({
         query: query,
-        limit: '10'
+        limit: '10',
+        offset: offset.toString()
       });
       
       // Add year range filters if they differ from default
@@ -72,7 +76,7 @@ const Search = () => {
         params.append('end_year', currentFilters.yearRange[1].toString());
       }
       
-      const response = await fetch(`/api/patents/search/serpapi?${params.toString()}`);
+      const response = await fetch(`http://localhost:3001/api/patents/search/serpapi?${params.toString()}`);
       
       console.log(`Response status: ${response.status}`);
       
@@ -88,20 +92,42 @@ const Search = () => {
       if (data.results && Array.isArray(data.results)) {
         // Sort patents by publication date (most recent first)
         const sortedPatents = sortPatentsByDate(data.results);
-        setPatents(sortedPatents);
+        
+        if (offset === 0) {
+          // New search - replace results
+          setPatents(sortedPatents);
+        } else {
+          // Load more - append results
+          setPatents(prev => [...prev, ...sortedPatents]);
+        }
+        
+        // Check if there are more results
+        setHasMoreResults(sortedPatents.length === 10);
+        
         console.log(`Found ${sortedPatents.length} patents, sorted by date`);
       } else {
         console.error('Invalid response format:', data);
-        setPatents([]);
+        if (offset === 0) {
+          setPatents([]);
+        }
         setError('Invalid response format from server');
       }
     } catch (err) {
       console.error('Search error:', err);
-      setPatents([]);
+      if (offset === 0) {
+        setPatents([]);
+      }
       setError(err instanceof Error ? err.message : 'An error occurred during search');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMorePatents = async () => {
+    if (!currentSearchQuery.trim() || loading) return;
+    
+    const newOffset = currentOffset + 10;
+    await searchPatents(currentSearchQuery, newOffset);
   };
 
   const handleFiltersChange = (filters: Filters) => {
@@ -332,6 +358,20 @@ const Search = () => {
                   );
                 })}
               </div>
+              
+              {/* Load More Button */}
+              {hasMoreResults && (
+                <div className="flex justify-center pt-6">
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={loadMorePatents}
+                    disabled={loading}
+                  >
+                    {loading ? "Loading..." : "Load More Patents"}
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </div>
