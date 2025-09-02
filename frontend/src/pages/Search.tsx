@@ -88,11 +88,13 @@ const Search = () => {
       if (currentFilters.yearRange[0] !== 2020 || currentFilters.yearRange[1] !== 2024) {
         params.append('start_year', currentFilters.yearRange[0].toString());
         params.append('end_year', currentFilters.yearRange[1].toString());
+        console.log(`Adding year filter: ${currentFilters.yearRange[0]} - ${currentFilters.yearRange[1]}`);
       }
       
       // Add jurisdiction filter if not "any"
       if (currentFilters.jurisdiction !== "any") {
         params.append('jurisdiction', currentFilters.jurisdiction);
+        console.log(`Adding jurisdiction filter: ${currentFilters.jurisdiction}`);
       }
       
       const response = await fetch(`https://patent-forge-backend.onrender.com/api/patents/search/serpapi?${params.toString()}`);
@@ -152,9 +154,11 @@ const Search = () => {
   };
 
   const handleFiltersChange = (filters: Filters) => {
+    console.log('Filters changed:', filters);
     setCurrentFilters(filters);
     // If we have a current search query, re-run the search with new filters
     if (currentSearchQuery.trim()) {
+      console.log('Re-running search with new filters');
       searchPatents(currentSearchQuery);
     }
   };
