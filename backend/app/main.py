@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 import os
 from pathlib import Path
 from app.core.config import settings
-from app.routers import patents, watchlist, alerts
+from app.routers import patents, watchlist, alerts, saved_items
 
 app = FastAPI(
     title="Patent Forge API",
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(patents.router, prefix="/api", tags=["patents"])
 app.include_router(watchlist.router, prefix="/api", tags=["watchlist"])
 app.include_router(alerts.router, prefix="/api", tags=["alerts"])
+app.include_router(saved_items.router, prefix="/api", tags=["saved_items"])
 
 # Mount static files from app/static (copied from frontend/dist in Docker)
 static_path = Path(__file__).parent / "static"

@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink, Eye, Share, Bookmark, Linkedin, Search } from "lucide-react";
 import { useState } from "react";
+import { saveService, PatentSaveData } from "@/services/saveService";
+import { useToast } from "@/hooks/use-toast";
 
 interface Patent {
   patent_id: string;
@@ -24,6 +26,8 @@ interface PatentCardProps {
 export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   const abstractPreview = patent.abstract.slice(0, 250);
   const needsExpansion = patent.abstract.length > 250;
@@ -36,6 +40,58 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
       if (inventor.linkedin_url) {
         window.open(inventor.linkedin_url, '_blank');
       }
+    }
+  };
+
+  const handleSavePatent = async () => {
+    setIsSaving(true);
+    try {
+      const patentData: PatentSaveData = {
+        title: patent.title,
+        abstract: patent.abstract,
+        assignee: patent.assignee,
+        inventors: patent.inventors,
+        link: patent.google_patents_url,
+        date_filed: patent.year ? new Date(patent.year, 0, 1).toISOString() : undefined,
+      };
+
+      await saveService.savePatent(patentData);
+      setIsWatched(true);
+      
+      toast({
+        title: "Patent Saved",
+        description: "Patent has been saved to your collection.",
+      });
+    } catch (error) {
+      console.error('Failed to save patent:', error);
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save patent",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveInventor = async (inventor: { name: string; linkedin_url?: string }) => {
+    try {
+      await saveService.saveInventor({
+        name: inventor.name,
+        linkedin_url: inventor.linkedin_url,
+      });
+
+      toast({
+        title: "Inventor Saved",
+        description: `${inventor.name} has been saved to your collection.`,
+      });
+    } catch (error) {
+      console.error('Failed to save inventor:', error);
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save inventor",
+        variant: "destructive",
+      });
     }
   };
 
@@ -59,7 +115,8 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsWatched(!isWatched)}
+            onClick={handleSavePatent}
+            disabled={isSaving}
             className={isWatched ? "text-primary" : "text-muted-foreground"}
           >
             <Bookmark className={`h-4 w-4 ${isWatched ? "fill-current" : ""}`} />
@@ -109,6 +166,14 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
                       )}
                     </span>
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSaveInventor(inventor)}
+                    className="h-6 w-6 p-0 hover:bg-accent"
+                  >
+                    <Bookmark className="h-3 w-3" />
+                  </Button>
                 </div>
               ))}
             </div>
@@ -135,13 +200,14 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
             Details
           </Button>
           <Button 
-            onClick={() => setIsWatched(!isWatched)} 
+            onClick={handleSavePatent} 
             variant="outline" 
             size="sm"
+            disabled={isSaving}
             className={isWatched ? "text-primary border-primary" : ""}
           >
             <Bookmark className={`mr-2 h-4 w-4 ${isWatched ? "fill-current" : ""}`} />
-            {isWatched ? "Watching" : "Watch"}
+            {isSaving ? "Saving..." : isWatched ? "Saved" : "Save Patent"}
           </Button>
           <Button variant="outline" size="sm">
             <Share className="mr-2 h-4 w-4" />

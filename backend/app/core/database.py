@@ -35,6 +35,9 @@ AsyncSessionLocal = async_sessionmaker(
 # Create base class for models
 Base = declarative_base()
 
+# Import all models to ensure they are registered with SQLAlchemy
+from app.models.saved_items import SavedPatent, SavedInventor
+
 # Dependency to get database session
 async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
