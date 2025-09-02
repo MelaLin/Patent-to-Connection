@@ -1,20 +1,15 @@
 services:
   - type: web
-    name: patent-forge
-    env: docker
-    buildCommand: ""
-    startCommand: ""
-    autoDeploy: true
+    name: patent-forge-backend
+    env: node
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: patent-forge-db
-          property: connectionString
-      - key: SERPAPI_API_KEY
-      - key: PATENTSVIEW_BASE
-        value: https://api.patentsview.org
-      - key: ALLOWED_ORIGINS
-        value: https://patent-forge.onrender.com
+      - key: NODE_ENV
+        value: production
+      - key: SERPAPI_KEY
+        sync: false
 
 databases:
   - name: patent-forge-db

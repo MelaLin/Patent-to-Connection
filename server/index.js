@@ -368,6 +368,16 @@ app.post('/api/watchlist/queries', async (req, res) => {
   }
 });
 
+// Simple test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'Server is running!',
+    timestamp: new Date().toISOString(),
+    serpapi_key_exists: !!SERPAPI_KEY,
+    serpapi_key_is_placeholder: SERPAPI_KEY === 'your_serpapi_key_here'
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
