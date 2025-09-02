@@ -542,6 +542,7 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
     }
 
     console.log('Calling SerpAPI with params:', { ...serpApiParams, api_key: '[HIDDEN]' });
+    console.log('Jurisdiction filter:', jurisdiction);
 
     // Call SerpAPI
     const serpResponse = await axios.get(SERPAPI_BASE_URL, { params: serpApiParams });
@@ -628,23 +629,26 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
     // Filter by year range if provided (client-side filtering)
     let filteredPatents = patents;
     if (start_year && end_year) {
-      filteredPatents = patents.filter(patent => 
+      filteredPatents = filteredPatents.filter(patent => 
         patent.year && patent.year >= parseInt(start_year) && patent.year <= parseInt(end_year)
       );
     }
 
     // Filter by jurisdiction if provided
     if (jurisdiction && jurisdiction !== 'any') {
+      console.log(`Filtering by jurisdiction: ${jurisdiction}`);
+      const beforeFilter = filteredPatents.length;
       filteredPatents = filteredPatents.filter(patent => 
         patent.jurisdiction === jurisdiction
       );
+      console.log(`Jurisdiction filter: ${beforeFilter} -> ${filteredPatents.length} patents`);
     }
 
     // Apply offset and limit
     const startIndex = parseInt(offset);
     const limitedPatents = filteredPatents.slice(startIndex, startIndex + parseInt(limit));
 
-    console.log(`Found ${patents.length} patents, returning ${limitedPatents.length} after filtering`);
+    console.log(`Found ${patents.length} patents, filtered to ${filteredPatents.length}, returning ${limitedPatents.length} after pagination`);
 
     res.json({
       results: limitedPatents,
