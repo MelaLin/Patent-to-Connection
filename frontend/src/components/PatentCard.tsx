@@ -55,13 +55,21 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
         date_filed: patent.year ? new Date(patent.year, 0, 1).toISOString() : undefined,
       };
 
-      await saveService.savePatent(patentData);
-      setIsWatched(true);
+      const result = await saveService.savePatent(patentData);
       
-      toast({
-        title: "Patent Saved",
-        description: "Patent has been saved to your collection.",
-      });
+      if (result.success) {
+        setIsWatched(true);
+        toast({
+          title: "Patent Saved",
+          description: "Patent has been saved to your collection.",
+        });
+      } else {
+        toast({
+          title: "Save Failed",
+          description: result.error || "Failed to save patent",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Failed to save patent:', error);
       toast({

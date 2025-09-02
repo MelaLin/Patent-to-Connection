@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from typing import List
+from typing import List, Dict, Any
 import logging
 from datetime import datetime
 from app.core.database import get_db
@@ -25,78 +25,43 @@ def get_current_user_id() -> str:
     return "user_123"  # Hardcoded for now
 
 # Patent endpoints
-@router.post("/patents/save", response_model=SavedPatentResponse)
+@router.post("/savePatent", response_model=Dict[str, Any])
 async def save_patent(
     patent_data: SavedPatentCreate,
     db: AsyncSession = Depends(get_db),
     current_user_id: str = Depends(get_current_user_id)
 ):
-    """Save a patent to the database"""
+    """Save a patent to the database or file storage"""
     logger.info(f"Saving patent: {patent_data.title}")
-    logger.info(f"Patent data: {patent_data.model_dump()}")
     
     try:
-        # Test database connection first
-        await db.execute("SELECT 1")
-        logger.info("Database connection verified")
-        
-        # Check if patent already exists for this user
-        existing_patent = await db.execute(
-            select(SavedPatent).where(
-                and_(
-                    SavedPatent.title == patent_data.title,
-                    SavedPatent.user_id == current_user_id
-                )
-            )
-        )
-        
-        if existing_patent.scalar_one_or_none():
-            logger.warning(f"Patent already saved for user {current_user_id}: {patent_data.title}")
-            raise HTTPException(status_code=400, detail="Patent already saved")
-        
-        # Convert date_filed string to datetime if provided
-        date_filed = None
-        if patent_data.date_filed:
-            try:
-                date_filed = datetime.fromisoformat(patent_data.date_filed.replace('Z', '+00:00'))
-                logger.info(f"Converted date_filed: {date_filed}")
-            except ValueError as e:
-                logger.warning(f"Invalid date_filed format: {patent_data.date_filed}, error: {e}")
-                date_filed = None
-        
-        # Create new saved patent
-        db_patent = SavedPatent(
-            title=patent_data.title,
-            abstract=patent_data.abstract,
-            assignee=patent_data.assignee,
-            inventors=patent_data.inventors,
-            link=patent_data.link,
-            date_filed=date_filed,
-            user_id=current_user_id
-        )
-        
-        logger.info(f"Creating patent record: {db_patent.title}")
-        db.add(db_patent)
-        await db.commit()
-        await db.refresh(db_patent)
-        
-        logger.info(f"Successfully saved patent with ID: {db_patent.id}")
-        return db_patent
-        
-    except HTTPException:
-        # Re-raise HTTPExceptions as they already have proper status codes
-        raise
-    except ConnectionError as e:
-        logger.error(f"Database connection error: {str(e)}", exc_info=True)
-        await db.rollback()
-        raise HTTPException(
-            status_code=503, 
-            detail=f"Database connection failed: {str(e)}"
-        )
+        if storage_service.use_database:
+            # Use database storage
+            await db.execute("SELECT 1")  # Test connection
+            db_patent = await storage_service.save_patent_db(db, patent_data.model_dump(), current_user_id)
+            logger.info(f"Successfully saved patent with ID: {db_patent.id}")
+            return {"success": True, "data": db_patent}
+        else:
+            # Use file storage
+            patent_record = storage_service.save_patent_file(patent_data.model_dump(), current_user_id)
+            logger.info(f"Successfully saved patent with ID: {patent_record['id']}")
+            return {"success": True, "data": patent_record}
+            
     except Exception as e:
-        await db.rollback()
         logger.error(f"Failed to save patent: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to save patent: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@router.post("/patents/save", response_model=SavedPatentResponse)
+async def save_patent_legacy(
+    patent_data: SavedPatentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Legacy endpoint for saving a patent"""
+    result = await save_patent(patent_data, db, current_user_id)
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result["data"]
 
 @router.get("/patents/saved", response_model=List[SavedPatentResponse])
 async def get_saved_patents(
@@ -107,21 +72,29 @@ async def get_saved_patents(
     logger.info(f"Fetching saved patents for user: {current_user_id}")
     
     try:
-        result = await db.execute(
-            select(SavedPatent)
-            .where(SavedPatent.user_id == current_user_id)
-            .order_by(SavedPatent.created_at.desc())
-        )
-        patents = result.scalars().all()
-        logger.info(f"Found {len(patents)} saved patents for user {current_user_id}")
-        return patents
-        
+        if storage_service.use_database:
+            # Use database storage
+            result = await db.execute(
+                select(SavedPatent)
+                .where(SavedPatent.user_id == current_user_id)
+                .order_by(SavedPatent.created_at.desc())
+            )
+            patents = result.scalars().all()
+            logger.info(f"Found {len(patents)} saved patents for user {current_user_id}")
+            return patents
+        else:
+            # Use file storage
+            patents = storage_service._load_json_file("patents.json")
+            user_patents = [p for p in patents if p.get("user_id") == current_user_id]
+            logger.info(f"Found {len(user_patents)} saved patents for user {current_user_id}")
+            return [SavedPatentResponse(**p) for p in user_patents]
+            
     except Exception as e:
         logger.error(f"Failed to fetch saved patents: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to fetch saved patents: {str(e)}")
 
 # Query endpoints
-@router.post("/saveQuery", response_model=SavedQueryResponse)
+@router.post("/saveQuery", response_model=Dict[str, Any])
 async def save_query(
     query_data: SavedQueryCreate,
     db: AsyncSession = Depends(get_db),
@@ -136,16 +109,16 @@ async def save_query(
             await db.execute("SELECT 1")  # Test connection
             db_query = await storage_service.save_query_db(db, query_data.query, current_user_id)
             logger.info(f"Successfully saved query with ID: {db_query.id}")
-            return db_query
+            return {"success": True, "data": db_query}
         else:
             # Use file storage
             query_record = storage_service.save_query_file(query_data.query, current_user_id)
             logger.info(f"Successfully saved query with ID: {query_record['id']}")
-            return SavedQueryResponse(**query_record)
+            return {"success": True, "data": query_record}
             
     except Exception as e:
         logger.error(f"Failed to save query: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to save query: {str(e)}")
+        return {"success": False, "error": str(e)}
 
 @router.get("/queries/saved", response_model=List[SavedQueryResponse])
 async def get_saved_queries(
@@ -176,6 +149,30 @@ async def get_saved_queries(
     except Exception as e:
         logger.error(f"Failed to fetch saved queries: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to fetch saved queries: {str(e)}")
+
+# Watchlist endpoint
+@router.get("/watchlist", response_model=Dict[str, Any])
+async def get_watchlist(
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Get all saved patents and queries for the current user"""
+    logger.info(f"Fetching watchlist for user: {current_user_id}")
+    
+    try:
+        if storage_service.use_database:
+            # Use database storage
+            watchlist_data = await storage_service.get_watchlist_db(db, current_user_id)
+        else:
+            # Use file storage
+            watchlist_data = storage_service.get_watchlist_file(current_user_id)
+        
+        logger.info(f"Found {len(watchlist_data['patents'])} patents and {len(watchlist_data['queries'])} queries for user {current_user_id}")
+        return watchlist_data
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch watchlist: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch watchlist: {str(e)}")
 
 # Alert endpoints
 @router.post("/createAlert", response_model=SavedAlertResponse)

@@ -9,6 +9,7 @@ export interface SavedPatent {
   date_filed?: string;
   user_id: string;
   created_at: string;
+  saved_at?: string;
 }
 
 export interface SavedInventor {
@@ -59,14 +60,19 @@ export interface AlertCreateData {
   frequency: string; // "daily", "weekly", "monthly"
 }
 
+export interface WatchlistData {
+  patents: SavedPatent[];
+  queries: SavedQuery[];
+}
+
 class SaveService {
   private baseUrl = '/api';
 
   // Save a patent
-  async savePatent(patentData: PatentSaveData): Promise<SavedPatent> {
+  async savePatent(patentData: PatentSaveData): Promise<{ success: boolean; data?: SavedPatent; error?: string }> {
     console.log('Sending patent data:', patentData);
     
-    const response = await fetch(`${this.baseUrl}/patents/save`, {
+    const response = await fetch(`${this.baseUrl}/savePatent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -75,22 +81,6 @@ class SaveService {
     });
 
     console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error response:', errorText);
-      
-      let errorDetail = 'Failed to save patent';
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorDetail = errorJson.detail || errorDetail;
-      } catch (e) {
-        errorDetail = errorText || errorDetail;
-      }
-      
-      throw new Error(errorDetail);
-    }
 
     const result = await response.json();
     console.log('Save patent result:', result);
@@ -156,7 +146,7 @@ class SaveService {
   }
 
   // Save a query
-  async saveQuery(queryData: QuerySaveData): Promise<SavedQuery> {
+  async saveQuery(queryData: QuerySaveData): Promise<{ success: boolean; data?: SavedQuery; error?: string }> {
     console.log('Sending query data:', queryData);
     
     const response = await fetch(`${this.baseUrl}/saveQuery`, {
@@ -168,21 +158,6 @@ class SaveService {
     });
 
     console.log('Response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error response:', errorText);
-      
-      let errorDetail = 'Failed to save query';
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorDetail = errorJson.detail || errorDetail;
-      } catch (e) {
-        errorDetail = errorText || errorDetail;
-      }
-      
-      throw new Error(errorDetail);
-    }
 
     const result = await response.json();
     console.log('Save query result:', result);
@@ -196,6 +171,18 @@ class SaveService {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Failed to fetch saved queries');
+    }
+
+    return response.json();
+  }
+
+  // Get watchlist (all saved patents and queries)
+  async getWatchlist(): Promise<WatchlistData> {
+    const response = await fetch(`${this.baseUrl}/watchlist`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch watchlist');
     }
 
     return response.json();

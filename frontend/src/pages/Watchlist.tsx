@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,73 +7,108 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PatentCard } from "@/components/PatentCard";
 import { PatentDrawer } from "@/components/PatentDrawer";
 import { Trash2, Bell, Search, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { saveService, WatchlistData, SavedPatent, SavedQuery } from "@/services/saveService";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const Watchlist = () => {
   const [selectedPatent, setSelectedPatent] = useState<any>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [watchlistData, setWatchlistData] = useState<WatchlistData>({ patents: [], queries: [] });
+  const [loading, setLoading] = useState(true);
+  const [isCreatingQuery, setIsCreatingQuery] = useState(false);
+  const [newQuery, setNewQuery] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  // Mock saved queries
-  const savedQueries = [
-    {
-      id: "1",
-      query: "HVAC efficiency thermal management",
-      created: "2024-08-15",
-      alertEnabled: true,
-      frequency: "weekly",
-      results: 127
-    },
-    {
-      id: "2", 
-      query: "solar panels bifacial photovoltaic",
-      created: "2024-08-12",
-      alertEnabled: false,
-      frequency: "daily",
-      results: 89
-    },
-    {
-      id: "3",
-      query: "wind turbine direct drive generator",
-      created: "2024-08-10",
-      alertEnabled: true,
-      frequency: "daily",
-      results: 156
-    }
-  ];
+  // Load watchlist data
+  useEffect(() => {
+    loadWatchlist();
+  }, []);
 
-  // Mock saved patents
-  const savedPatents = [
-    {
-      patent_id: "US10123456B2",
-      title: "High-Efficiency HVAC System with Smart Temperature Control",
-      abstract: "A heating, ventilation, and air conditioning (HVAC) system that incorporates machine learning algorithms to optimize energy consumption while maintaining optimal comfort levels...",
-      assignee: "EcoTech Industries",
-      inventors: [
-        { name: "Dr. Sarah Chen", linkedin_url: "https://linkedin.com/in/sarahchen" }
-      ],
-      year: 2023,
-      jurisdiction: "US",
-      google_patents_url: "https://patents.google.com/patent/US10123456B2",
-      savedDate: "2024-08-20"
-    },
-    {
-      patent_id: "EP3456789A1",
-      title: "Bifacial Solar Panel with Enhanced Light Absorption", 
-      abstract: "An innovative photovoltaic panel design featuring bifacial cells with micro-textured surfaces that capture sunlight from both front and rear sides...",
-      assignee: "SolarMax Corporation",
-      inventors: [
-        { name: "Prof. Elena Rodriguez", linkedin_url: "https://linkedin.com/in/elenarodriguez" }
-      ],
-      year: 2023,
-      jurisdiction: "EP", 
-      google_patents_url: "https://patents.google.com/patent/EP3456789A1",
-      savedDate: "2024-08-18"
+  const loadWatchlist = async () => {
+    try {
+      setLoading(true);
+      const data = await saveService.getWatchlist();
+      setWatchlistData(data);
+    } catch (error) {
+      console.error('Failed to load watchlist:', error);
+      toast({
+        title: "Load Failed",
+        description: error instanceof Error ? error.message : "Failed to load watchlist",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleCreateQuery = async () => {
+    if (!newQuery.trim()) return;
+    
+    setIsCreatingQuery(true);
+    try {
+      const result = await saveService.saveQuery({ query: newQuery.trim() });
+      
+      if (result.success) {
+        toast({
+          title: "Query Saved",
+          description: `Search query "${newQuery.trim()}" has been saved.`,
+        });
+        setIsDialogOpen(false);
+        setNewQuery("");
+        // Reload watchlist to show the new query
+        await loadWatchlist();
+      } else {
+        toast({
+          title: "Save Failed",
+          description: result.error || "Failed to save query",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to save query:', error);
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save query",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingQuery(false);
+    }
+  };
 
   const handlePatentDetails = (patent: any) => {
     setSelectedPatent(patent);
     setDrawerOpen(true);
   };
+
+  // Convert saved patent to patent card format
+  const convertSavedPatentToCard = (savedPatent: SavedPatent) => {
+    return {
+      patent_id: `ID-${savedPatent.id}`,
+      title: savedPatent.title,
+      abstract: savedPatent.abstract,
+      assignee: savedPatent.assignee,
+      inventors: savedPatent.inventors,
+      year: savedPatent.date_filed ? new Date(savedPatent.date_filed).getFullYear() : undefined,
+      jurisdiction: "US",
+      google_patents_url: savedPatent.link,
+      savedDate: savedPatent.saved_at || savedPatent.created_at
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading watchlist...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
@@ -99,42 +134,80 @@ const Watchlist = () => {
                   Monitor search queries for new patents
                 </CardDescription>
               </div>
-              <Button size="sm" variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                New Query
-              </Button>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Query
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Save Search Query</DialogTitle>
+                    <DialogDescription>
+                      Save a search query to monitor for new patents.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="new-query">Search Query</Label>
+                      <Input
+                        id="new-query"
+                        placeholder="e.g., solar panels, wind turbine, AI"
+                        value={newQuery}
+                        onChange={(e) => setNewQuery(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleCreateQuery}
+                      disabled={isCreatingQuery || !newQuery.trim()}
+                    >
+                      {isCreatingQuery ? "Saving..." : "Save Query"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {savedQueries.map((query) => (
-                <div key={query.id} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {query.results} results
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          Created {query.created}
-                        </span>
+              {watchlistData.queries.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No saved queries yet. Create your first query to get started.
+                </div>
+              ) : (
+                watchlistData.queries.map((query) => (
+                  <div key={query.id} className="p-4 border rounded-lg space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            Created {new Date(query.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="font-medium text-sm">{query.query}</p>
                       </div>
-                      <p className="font-medium text-sm">{query.query}</p>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <Bell className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Alerts</span>
-                        <Switch checked={query.alertEnabled} />
-                      </div>
-                      {query.alertEnabled && (
-                        <Select value={query.frequency}>
+                    
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Bell className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Alerts</span>
+                          <Switch />
+                        </div>
+                        <Select value="weekly">
                           <SelectTrigger className="h-8 w-24">
                             <SelectValue />
                           </SelectTrigger>
@@ -144,14 +217,14 @@ const Watchlist = () => {
                             <SelectItem value="monthly">Monthly</SelectItem>
                           </SelectContent>
                         </Select>
-                      )}
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Run Search
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Run Search
-                    </Button>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -169,44 +242,53 @@ const Watchlist = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {savedPatents.map((patent) => (
-                <div key={patent.patent_id} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="space-y-1 flex-1">
-                      <h3 className="font-medium text-sm leading-tight">{patent.title}</h3>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Badge variant="secondary" className="text-xs">
-                          {patent.patent_id}
-                        </Badge>
-                        <span>•</span>
-                        <span>{patent.assignee}</span>
-                        <span>•</span>
-                        <span>Saved {patent.savedDate}</span>
+              {watchlistData.patents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No saved patents yet. Save patents from search results to see them here.
+                </div>
+              ) : (
+                watchlistData.patents.map((savedPatent) => {
+                  const patent = convertSavedPatentToCard(savedPatent);
+                  return (
+                    <div key={savedPatent.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="space-y-1 flex-1">
+                          <h3 className="font-medium text-sm leading-tight">{patent.title}</h3>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="secondary" className="text-xs">
+                              {patent.patent_id}
+                            </Badge>
+                            <span>•</span>
+                            <span>{patent.assignee}</span>
+                            <span>•</span>
+                            <span>Saved {new Date(patent.savedDate).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                        {patent.abstract}
+                      </p>
+                      
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handlePatentDetails(patent)}
+                        >
+                          Details
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          Share
+                        </Button>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-                    {patent.abstract}
-                  </p>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handlePatentDetails(patent)}
-                    >
-                      Details
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      Share
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>

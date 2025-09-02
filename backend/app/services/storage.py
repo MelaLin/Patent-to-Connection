@@ -99,7 +99,7 @@ class StorageService:
             "link": patent_data.get("link"),
             "date_filed": patent_data.get("date_filed"),
             "user_id": user_id,
-            "created_at": datetime.now().isoformat()
+            "saved_at": datetime.now().isoformat()
         }
         
         patents.append(patent_record)
@@ -139,6 +139,52 @@ class StorageService:
         if self._save_json_file("alerts.json", alerts):
             return alert_record
         raise Exception("Failed to save alert to file")
+    
+    # Watchlist methods
+    async def get_watchlist_db(self, db: AsyncSession, user_id: str) -> Dict[str, Any]:
+        """Get all saved patents and queries from database"""
+        try:
+            # Get saved patents
+            patents_result = await db.execute(
+                select(SavedPatent)
+                .where(SavedPatent.user_id == user_id)
+                .order_by(SavedPatent.created_at.desc())
+            )
+            patents = patents_result.scalars().all()
+            
+            # Get saved queries
+            queries_result = await db.execute(
+                select(SavedQuery)
+                .where(SavedQuery.user_id == user_id)
+                .order_by(SavedQuery.created_at.desc())
+            )
+            queries = queries_result.scalars().all()
+            
+            return {
+                "patents": [patent.__dict__ for patent in patents],
+                "queries": [query.__dict__ for query in queries]
+            }
+        except Exception as e:
+            logger.error(f"Error fetching watchlist from database: {e}")
+            raise
+    
+    def get_watchlist_file(self, user_id: str) -> Dict[str, Any]:
+        """Get all saved patents and queries from files"""
+        try:
+            patents = self._load_json_file("patents.json")
+            queries = self._load_json_file("queries.json")
+            
+            # Filter by user_id
+            user_patents = [p for p in patents if p.get("user_id") == user_id]
+            user_queries = [q for q in queries if q.get("user_id") == user_id]
+            
+            return {
+                "patents": user_patents,
+                "queries": user_queries
+            }
+        except Exception as e:
+            logger.error(f"Error fetching watchlist from files: {e}")
+            raise
 
 # Global storage service instance
 storage_service = StorageService()
