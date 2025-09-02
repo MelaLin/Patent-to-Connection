@@ -692,6 +692,67 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
   }
 });
 
+// Delete endpoints for watchlist items
+app.delete('/api/watchlist/patents/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const watchlist = await loadWatchlist();
+    
+    const patentIndex = watchlist.patents.findIndex(patent => patent.id === id);
+    if (patentIndex === -1) {
+      return res.status(404).json({ success: false, error: 'Patent not found' });
+    }
+    
+    watchlist.patents.splice(patentIndex, 1);
+    await saveWatchlist(watchlist);
+    
+    res.json({ success: true, message: 'Patent deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting patent:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete patent' });
+  }
+});
+
+app.delete('/api/watchlist/queries/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const watchlist = await loadWatchlist();
+    
+    const queryIndex = watchlist.queries.findIndex(query => query.id === id);
+    if (queryIndex === -1) {
+      return res.status(404).json({ success: false, error: 'Query not found' });
+    }
+    
+    watchlist.queries.splice(queryIndex, 1);
+    await saveWatchlist(watchlist);
+    
+    res.json({ success: true, message: 'Query deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting query:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete query' });
+  }
+});
+
+app.delete('/api/watchlist/inventors/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const watchlist = await loadWatchlist();
+    
+    const inventorIndex = watchlist.inventors.findIndex(inventor => inventor.id === id);
+    if (inventorIndex === -1) {
+      return res.status(404).json({ success: false, error: 'Inventor not found' });
+    }
+    
+    watchlist.inventors.splice(inventorIndex, 1);
+    await saveWatchlist(watchlist);
+    
+    res.json({ success: true, message: 'Inventor deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting inventor:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete inventor' });
+  }
+});
+
 // Initialize the watchlist file on startup
 initializeWatchlistFile().then(() => {
   app.listen(PORT, () => {

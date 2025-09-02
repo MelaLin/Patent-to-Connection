@@ -2,16 +2,15 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PatentCard } from "@/components/PatentCard";
 import { PatentDrawer } from "@/components/PatentDrawer";
-import { Trash2, Bell, Search, Plus, Linkedin } from "lucide-react";
+import { Trash2, Search, Plus, Linkedin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveService, WatchlistData, SavedPatent, SavedQuery } from "@/services/saveService";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 const Watchlist = () => {
   const [selectedPatent, setSelectedPatent] = useState<any>(null);
@@ -22,6 +21,7 @@ const Watchlist = () => {
   const [newQuery, setNewQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Load watchlist data
   useEffect(() => {
@@ -43,6 +43,88 @@ const Watchlist = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeletePatent = async (patentId: string) => {
+    try {
+      const result = await saveService.deletePatent(patentId);
+      if (result.success) {
+        toast({
+          title: "Patent Deleted",
+          description: "Patent has been removed from your watchlist.",
+        });
+        await loadWatchlist(); // Reload to update the list
+      } else {
+        toast({
+          title: "Delete Failed",
+          description: result.error || "Failed to delete patent",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete patent:', error);
+      toast({
+        title: "Delete Failed",
+        description: error instanceof Error ? error.message : "Failed to delete patent",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteQuery = async (queryId: string) => {
+    try {
+      const result = await saveService.deleteQuery(queryId);
+      if (result.success) {
+        toast({
+          title: "Query Deleted",
+          description: "Query has been removed from your watchlist.",
+        });
+        await loadWatchlist(); // Reload to update the list
+      } else {
+        toast({
+          title: "Delete Failed",
+          description: result.error || "Failed to delete query",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete query:', error);
+      toast({
+        title: "Delete Failed",
+        description: error instanceof Error ? error.message : "Failed to delete query",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteInventor = async (inventorId: string) => {
+    try {
+      const result = await saveService.deleteInventor(inventorId);
+      if (result.success) {
+        toast({
+          title: "Inventor Deleted",
+          description: "Inventor has been removed from your watchlist.",
+        });
+        await loadWatchlist(); // Reload to update the list
+      } else {
+        toast({
+          title: "Delete Failed",
+          description: result.error || "Failed to delete inventor",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete inventor:', error);
+      toast({
+        title: "Delete Failed",
+        description: error instanceof Error ? error.message : "Failed to delete inventor",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRunSearch = (query: string) => {
+    navigate('/search', { state: { searchQuery: query } });
   };
 
   const handleCreateQuery = async () => {
@@ -200,30 +282,21 @@ const Watchlist = () => {
                         </div>
                         <p className="font-medium text-sm">{query.query}</p>
                       </div>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDeleteQuery(query.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                     
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <Bell className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Alerts</span>
-                          <Switch />
-                        </div>
-                        <Select value="weekly">
-                          <SelectTrigger className="h-8 w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="daily">Daily</SelectItem>
-                            <SelectItem value="weekly">Weekly</SelectItem>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button variant="outline" size="sm">
+                    <div className="flex items-center justify-end pt-2 border-t">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleRunSearch(query.query)}
+                      >
                         Run Search
                       </Button>
                     </div>
@@ -269,7 +342,11 @@ const Watchlist = () => {
                             <span>Saved {new Date(patent.savedDate).toLocaleDateString()}</span>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeletePatent(savedPatent.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -328,7 +405,11 @@ const Watchlist = () => {
                           )}
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDeleteInventor(inventor.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

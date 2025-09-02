@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, TrendingUp, Bookmark, Menu, X } from "lucide-react";
+import { Search, Bookmark, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -13,11 +13,6 @@ const navigation = [
     name: "Search Patents",
     href: "/search",
     icon: Search,
-  },
-  {
-    name: "Trends",
-    href: "/trends", 
-    icon: TrendingUp,
   },
   {
     name: "Watchlist",

@@ -412,6 +412,111 @@ class SaveService {
       throw new Error(error instanceof Error ? error.message : 'Network error fetching watchlist');
     }
   }
+
+  // Delete a saved patent
+  async deletePatent(patentId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/watchlist/patents/${patentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        
+        let errorDetail = 'Failed to delete patent';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorDetail = errorJson.error || errorDetail;
+        } catch (e) {
+          errorDetail = errorText || errorDetail;
+        }
+        
+        return { success: false, error: errorDetail };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Network error deleting patent:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Network error deleting patent' 
+      };
+    }
+  }
+
+  // Delete a saved query
+  async deleteQuery(queryId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/watchlist/queries/${queryId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        
+        let errorDetail = 'Failed to delete query';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorDetail = errorJson.error || errorDetail;
+        } catch (e) {
+          errorDetail = errorText || errorDetail;
+        }
+        
+        return { success: false, error: errorDetail };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Network error deleting query:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Network error deleting query' 
+      };
+    }
+  }
+
+  // Delete a saved inventor
+  async deleteInventor(inventorId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/watchlist/inventors/${inventorId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        
+        let errorDetail = 'Failed to delete inventor';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorDetail = errorJson.error || errorDetail;
+        } catch (e) {
+          errorDetail = errorText || errorDetail;
+        }
+        
+        return { success: false, error: errorDetail };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Network error deleting inventor:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Network error deleting inventor' 
+      };
+    }
+  }
 }
 
 export const saveService = new SaveService();

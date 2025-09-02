@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterBar } from "@/components/FilterBar";
 import { PatentCard } from "@/components/PatentCard";
@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Lightbulb, Cpu, Zap, Leaf, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveService } from "@/services/saveService";
+import { useLocation } from "react-router-dom";
 
 interface Patent {
   title: string;
@@ -49,6 +50,15 @@ const Search = () => {
     jurisdiction: "any"
   });
   const { toast } = useToast();
+  const location = useLocation();
+
+  // Handle search query from watchlist navigation
+  useEffect(() => {
+    if (location.state?.searchQuery) {
+      setCurrentSearchQuery(location.state.searchQuery);
+      searchPatents(location.state.searchQuery);
+    }
+  }, [location.state]);
 
   // Sort patents by publication date (most recent first)
   const sortPatentsByDate = (patents: Patent[]): Patent[] => {
