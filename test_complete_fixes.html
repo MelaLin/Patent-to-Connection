@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Patent Scout Test - All Fixes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .links a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .links a:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Patent Scout - Complete Fixes Test</h1>
+    <p>This page tests all the implemented fixes for the patent search application.</p>
+
+    <div class="container">
+        <h2>🧪 Backend Endpoint Tests</h2>
+        
+        <div class="test-section">
+            <h3>1. Inventors Save Endpoint</h3>
+            <p>Testing POST /api/inventors/save</p>
+            <button onclick="testInventorSave()">Test Inventor Save</button>
+            <div id="inventor-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Watchlist Patents Save Endpoint</h3>
+            <p>Testing POST /api/watchlist/patents</p>
+            <button onclick="testPatentSave()">Test Patent Save</button>
+            <div id="patent-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Watchlist Queries Save Endpoint</h3>
+            <p>Testing POST /api/watchlist/queries</p>
+            <button onclick="testQuerySave()">Test Query Save</button>
+            <div id="query-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Watchlist Fetch Endpoint</h3>
+            <p>Testing GET /api/watchlist</p>
+            <button onclick="testWatchlistFetch()">Test Watchlist Fetch</button>
+            <div id="watchlist-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Search Endpoint with Google Patents URLs</h3>
+            <p>Testing GET /api/patents/search/serpapi</p>
+            <button onclick="testSearchWithGooglePatents()">Test Search</button>
+            <div id="search-result" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔗 Frontend Integration Tests</h2>
+        
+        <div class="test-section">
+            <h3>6. Google Patents URL Generation</h3>
+            <p>Testing that Google Patents URLs are correctly formatted</p>
+            <button onclick="testGooglePatentsUrls()">Test URL Generation</button>
+            <div id="url-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>7. Frontend-Backend Integration</h3>
+            <p>Testing that frontend can communicate with all backend endpoints</p>
+            <button onclick="testFrontendIntegration()">Test Integration</button>
+            <div id="integration-result" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Test Results Summary</h2>
+        <div id="summary" class="test-section info">
+            <p>Click the test buttons above to run the complete test suite.</p>
+        </div>
+    </div>
+
+    <div class="links">
+        <a href="http://localhost:8081" target="_blank">Open Frontend App</a>
+        <a href="http://localhost:8081/#/watchlist" target="_blank">Open Watchlist Tab</a>
+        <a href="http://localhost:3001/api/health" target="_blank">Backend Health Check</a>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+        let testResults = {};
+
+        function displayResult(elementId, data, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${isSuccess ? 'success' : 'error'}`;
+            element.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        async function testInventorSave() {
+            try {
+                const response = await fetch(`${API_BASE}/inventors/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Dr. Test Inventor',
+                        affiliation: 'Test University',
+                        linkedin_url: 'https://linkedin.com/in/testinventor'
+                    })
+                });
+                
+                const data = await response.json();
+                const success = response.ok && data.success;
+                displayResult('inventor-result', data, success);
+                testResults.inventorSave = success;
+                updateSummary();
+            } catch (error) {
+                displayResult('inventor-result', { error: error.message }, false);
+                testResults.inventorSave = false;
+                updateSummary();
+            }
+        }
+
+        async function testPatentSave() {
+            try {
+                const response = await fetch(`${API_BASE}/watchlist/patents`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: 'Test Patent for Complete Fixes',
+                        abstract: 'This is a test patent to verify all fixes are working correctly.',
+                        assignee: 'Test Company Inc',
+                        inventors: [{ name: 'Dr. Test Inventor' }],
+                        link: 'https://patents.google.com/patent/US1234567'
+                    })
+                });
+                
+                const data = await response.json();
+                const success = response.ok && data.success;
+                displayResult('patent-result', data, success);
+                testResults.patentSave = success;
+                updateSummary();
+            } catch (error) {
+                displayResult('patent-result', { error: error.message }, false);
+                testResults.patentSave = false;
+                updateSummary();
+            }
+        }
+
+        async function testQuerySave() {
+            try {
+                const response = await fetch(`${API_BASE}/watchlist/queries`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: 'test query for complete fixes',
+                        filters: { yearFrom: 2020, yearTo: 2024 }
+                    })
+                });
+                
+                const data = await response.json();
+                const success = response.ok && data.success;
+                displayResult('query-result', data, success);
+                testResults.querySave = success;
+                updateSummary();
+            } catch (error) {
+                displayResult('query-result', { error: error.message }, false);
+                testResults.querySave = false;
+                updateSummary();
+            }
+        }
+
+        async function testWatchlistFetch() {
+            try {
+                const response = await fetch(`${API_BASE}/watchlist`);
+                const data = await response.json();
+                const success = response.ok && data.patents && data.queries && data.inventors;
+                displayResult('watchlist-result', data, success);
+                testResults.watchlistFetch = success;
+                updateSummary();
+            } catch (error) {
+                displayResult('watchlist-result', { error: error.message }, false);
+                testResults.watchlistFetch = false;
+                updateSummary();
+            }
+        }
+
+        async function testSearchWithGooglePatents() {
+            try {
+                const response = await fetch(`${API_BASE}/patents/search/serpapi?query=solar&limit=3`);
+                const data = await response.json();
+                
+                // Check that Google Patents URLs are present and correctly formatted
+                const hasGooglePatentsUrls = data.results && data.results.every(patent => 
+                    patent.google_patents_url && 
+                    patent.google_patents_url.startsWith('https://patents.google.com/patent/')
+                );
+                
+                const success = response.ok && hasGooglePatentsUrls;
+                displayResult('search-result', {
+                    ...data,
+                    googlePatentsUrlsValid: hasGooglePatentsUrls,
+                    sampleUrls: data.results ? data.results.slice(0, 2).map(p => p.google_patents_url) : []
+                }, success);
+                testResults.searchWithGooglePatents = success;
+                updateSummary();
+            } catch (error) {
+                displayResult('search-result', { error: error.message }, false);
+                testResults.searchWithGooglePatents = false;
+                updateSummary();
+            }
+        }
+
+        function testGooglePatentsUrls() {
+            const testUrls = [
+                'https://patents.google.com/patent/US1234567',
+                'https://patents.google.com/patent/EP3456789A1',
+                'https://patents.google.com/patent/WO2020123456A1'
+            ];
+            
+            const validUrls = testUrls.every(url => 
+                url.startsWith('https://patents.google.com/patent/') && 
+                url.length > 'https://patents.google.com/patent/'.length
+            );
+            
+            displayResult('url-result', {
+                testUrls,
+                validUrls,
+                allValid: validUrls,
+                message: validUrls ? 'All Google Patents URLs are correctly formatted!' : 'Some URLs are incorrectly formatted'
+            }, validUrls);
+            testResults.googlePatentsUrls = validUrls;
+            updateSummary();
+        }
+
+        async function testFrontendIntegration() {
+            try {
+                // Test that frontend can access the backend
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                const success = response.ok && data.status === 'healthy';
+                displayResult('integration-result', {
+                    backendHealth: data,
+                    frontendCanAccessBackend: success,
+                    message: success ? 'Frontend can successfully communicate with backend!' : 'Frontend cannot access backend'
+                }, success);
+                testResults.frontendIntegration = success;
+                updateSummary();
+            } catch (error) {
+                displayResult('integration-result', { 
+                    error: error.message,
+                    frontendCanAccessBackend: false,
+                    message: 'Frontend cannot access backend - check if backend is running on port 3001'
+                }, false);
+                testResults.frontendIntegration = false;
+                updateSummary();
+            }
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(Boolean).length;
+            
+            if (totalTests === 0) {
+                summary.innerHTML = '<p>Click the test buttons above to run the complete test suite.</p>';
+                return;
+            }
+            
+            const successRate = Math.round((passedTests / totalTests) * 100);
+            const status = successRate === 100 ? '✅ All tests passed!' : 
+                          successRate >= 80 ? '⚠️ Most tests passed' : 
+                          '❌ Many tests failed';
+            
+            summary.innerHTML = `
+                <h3>${status}</h3>
+                <p><strong>Test Results:</strong> ${passedTests}/${totalTests} tests passed (${successRate}%)</p>
+                <ul>
+                    ${Object.entries(testResults).map(([test, passed]) => 
+                        `<li>${test}: ${passed ? '✅ Passed' : '❌ Failed'}</li>`
+                    ).join('')}
+                </ul>
+                ${successRate === 100 ? 
+                    '<p><strong>🎉 All fixes are working correctly! The application is ready for deployment.</strong></p>' : 
+                    '<p><strong>⚠️ Some issues remain. Please check the failed tests above.</strong></p>'
+                }
+            `;
+        }
+
+        // Auto-run some basic tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testGooglePatentsUrls();
+                testFrontendIntegration();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

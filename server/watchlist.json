@@ -77,6 +77,15 @@
       "date_filed": "2024-01-01",
       "saved_at": "2025-09-02T20:38:55.916Z",
       "user_id": "dev"
+    },
+    {
+      "id": "1756846689577",
+      "title": "Test Patent",
+      "abstract": "Test abstract",
+      "assignee": "Test Company",
+      "inventors": [],
+      "saved_at": "2025-09-02T20:58:09.577Z",
+      "user_id": "dev"
     }
   ],
   "queries": [
@@ -111,6 +120,15 @@
       },
       "created_at": "2025-09-02T20:38:57.103Z",
       "user_id": "dev"
+    },
+    {
+      "id": "1756846693892",
+      "query": "test query",
+      "filters": {
+        "yearFrom": 2020
+      },
+      "created_at": "2025-09-02T20:58:13.892Z",
+      "user_id": "dev"
     }
   ],
   "inventors": [
@@ -144,6 +162,13 @@
       "linkedin_url": "https://linkedin.com/in/testinventor",
       "associated_patent_id": "US1234567",
       "created_at": "2025-09-02T20:38:57.742Z",
+      "user_id": "dev"
+    },
+    {
+      "id": "1756846685306",
+      "name": "Test Inventor",
+      "affiliation": "Test Company",
+      "created_at": "2025-09-02T20:58:05.306Z",
       "user_id": "dev"
     }
   ]

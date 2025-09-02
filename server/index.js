@@ -196,6 +196,55 @@ app.post('/api/saveInventor', async (req, res) => {
   }
 });
 
+// Alternative inventors save endpoint (for compatibility)
+app.post('/api/inventors/save', async (req, res) => {
+  try {
+    const { name, affiliation, linkedin_url, associated_patent_id } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required field: name' 
+      });
+    }
+
+    const watchlistData = await readWatchlistData();
+    
+    const newInventor = {
+      id: Date.now().toString(),
+      name,
+      affiliation,
+      linkedin_url,
+      associated_patent_id,
+      created_at: new Date().toISOString(),
+      user_id: 'dev' // For now, using a default user ID
+    };
+
+    watchlistData.inventors.push(newInventor);
+    
+    const success = await writeWatchlistData(watchlistData);
+    
+    if (success) {
+      res.json({ 
+        success: true, 
+        inventorId: newInventor.id,
+        data: newInventor 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to save inventor' 
+      });
+    }
+  } catch (error) {
+    console.error('Error saving inventor:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
+  }
+});
+
 // Get Watchlist
 app.get('/api/watchlist', async (req, res) => {
   try {
@@ -214,6 +263,101 @@ app.get('/api/watchlist', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Failed to fetch watchlist' 
+    });
+  }
+});
+
+// Watchlist save endpoints for compatibility
+app.post('/api/watchlist/patents', async (req, res) => {
+  try {
+    const { title, abstract, assignee, inventors, link, date_filed } = req.body;
+    
+    if (!title || !abstract || !assignee) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: title, abstract, assignee' 
+      });
+    }
+
+    const watchlistData = await readWatchlistData();
+    
+    const newPatent = {
+      id: Date.now().toString(),
+      title,
+      abstract,
+      assignee,
+      inventors: inventors || [],
+      link,
+      date_filed,
+      saved_at: new Date().toISOString(),
+      user_id: 'dev' // For now, using a default user ID
+    };
+
+    watchlistData.patents.push(newPatent);
+    
+    const success = await writeWatchlistData(watchlistData);
+    
+    if (success) {
+      res.json({ 
+        success: true, 
+        data: newPatent 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to save patent' 
+      });
+    }
+  } catch (error) {
+    console.error('Error saving patent:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
+  }
+});
+
+app.post('/api/watchlist/queries', async (req, res) => {
+  try {
+    const { query, filters } = req.body;
+    
+    if (!query) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required field: query' 
+      });
+    }
+
+    const watchlistData = await readWatchlistData();
+    
+    const newQuery = {
+      id: Date.now().toString(),
+      query,
+      filters: filters || {},
+      created_at: new Date().toISOString(),
+      user_id: 'dev' // For now, using a default user ID
+    };
+
+    watchlistData.queries.push(newQuery);
+    
+    const success = await writeWatchlistData(watchlistData);
+    
+    if (success) {
+      res.json({ 
+        success: true, 
+        data: newQuery 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to save query' 
+      });
+    }
+  } catch (error) {
+    console.error('Error saving query:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
     });
   }
 });

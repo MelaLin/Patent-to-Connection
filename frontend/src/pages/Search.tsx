@@ -11,13 +11,19 @@ import { saveService } from "@/services/saveService";
 
 interface Patent {
   title: string;
-  snippet: string;
+  snippet?: string;
+  abstract?: string;
   publication_date: string;
-  inventor: string;
+  inventor?: string;
+  inventors?: Array<{ name: string; linkedin_url?: string }>;
   assignee: string;
-  patent_link: string;
+  patent_link?: string;
   patent_number?: string;
-  pdf: string;
+  patent_id?: string;
+  year?: number;
+  jurisdiction?: string;
+  google_patents_url?: string;
+  pdf?: string;
 }
 
 interface Filters {
@@ -334,14 +340,14 @@ const Search = () => {
                     <PatentCard
                       key={`${patent.title}-${index}`}
                       patent={{
-                        patent_id: patent.patent_number || patent.patent_link || `patent-${index}`,
+                        patent_id: patent.patent_id || patent.patent_number || `patent-${index}`,
                         title: patent.title,
-                        abstract: patent.snippet,
+                        abstract: patent.abstract || patent.snippet,
                         assignee: patent.assignee,
-                        inventors: inventors,
-                        year: patent.publication_date ? new Date(patent.publication_date).getFullYear() : undefined,
-                        jurisdiction: "US",
-                        google_patents_url: patent.patent_link
+                        inventors: patent.inventors || inventors,
+                        year: patent.year || (patent.publication_date ? new Date(patent.publication_date).getFullYear() : undefined),
+                        jurisdiction: patent.jurisdiction || "US",
+                        google_patents_url: patent.google_patents_url || patent.patent_link || `https://patents.google.com/patent/${patent.patent_id}`
                       }}
                       onDetails={() => handlePatentDetails(patent)}
                       onInventorClick={(inventor) => {
@@ -379,14 +385,14 @@ const Search = () => {
 
       <PatentDrawer
         patent={selectedPatent ? {
-          patent_id: selectedPatent.patent_number || selectedPatent.patent_link || "unknown",
+          patent_id: selectedPatent.patent_id || selectedPatent.patent_number || selectedPatent.patent_link || "unknown",
           title: selectedPatent.title,
-          abstract: selectedPatent.snippet,
+          abstract: selectedPatent.abstract || selectedPatent.snippet,
           assignee: selectedPatent.assignee,
-          inventors: parseInventors(selectedPatent.inventor),
-          year: selectedPatent.publication_date ? new Date(selectedPatent.publication_date).getFullYear() : undefined,
-          jurisdiction: "US",
-          google_patents_url: selectedPatent.patent_link
+          inventors: selectedPatent.inventors || parseInventors(selectedPatent.inventor),
+          year: selectedPatent.year || (selectedPatent.publication_date ? new Date(selectedPatent.publication_date).getFullYear() : undefined),
+          jurisdiction: selectedPatent.jurisdiction || "US",
+          google_patents_url: selectedPatent.google_patents_url || selectedPatent.patent_link
         } : null}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
