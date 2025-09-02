@@ -405,7 +405,7 @@ app.get('/api/debug/serpapi-raw', async (req, res) => {
       api_key: SERPAPI_KEY,
       engine: 'google_patents',
       q: query,
-      num: 5
+      num: 10
     };
 
     console.log('Debug: Calling SerpAPI with params:', { ...serpApiParams, api_key: '[HIDDEN]' });
