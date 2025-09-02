@@ -72,19 +72,42 @@ class SaveService {
   async savePatent(patentData: PatentSaveData): Promise<{ success: boolean; data?: SavedPatent; error?: string }> {
     console.log('Sending patent data:', patentData);
     
-    const response = await fetch(`${this.baseUrl}/savePatent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(patentData),
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}/savePatent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(patentData),
+      });
 
-    console.log('Response status:', response.status);
+      console.log('Response status:', response.status);
 
-    const result = await response.json();
-    console.log('Save patent result:', result);
-    return result;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        
+        let errorDetail = 'Failed to save patent';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorDetail = errorJson.detail || errorJson.error || errorDetail;
+        } catch (e) {
+          errorDetail = errorText || errorDetail;
+        }
+        
+        return { success: false, error: errorDetail };
+      }
+
+      const result = await response.json();
+      console.log('Save patent result:', result);
+      return result;
+    } catch (error) {
+      console.error('Network error saving patent:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Network error saving patent' 
+      };
+    }
   }
 
   // Get all saved patents
@@ -149,19 +172,42 @@ class SaveService {
   async saveQuery(queryData: QuerySaveData): Promise<{ success: boolean; data?: SavedQuery; error?: string }> {
     console.log('Sending query data:', queryData);
     
-    const response = await fetch(`${this.baseUrl}/saveQuery`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(queryData),
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}/saveQuery`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(queryData),
+      });
 
-    console.log('Response status:', response.status);
+      console.log('Response status:', response.status);
 
-    const result = await response.json();
-    console.log('Save query result:', result);
-    return result;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        
+        let errorDetail = 'Failed to save query';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorDetail = errorJson.detail || errorJson.error || errorDetail;
+        } catch (e) {
+          errorDetail = errorText || errorDetail;
+        }
+        
+        return { success: false, error: errorDetail };
+      }
+
+      const result = await response.json();
+      console.log('Save query result:', result);
+      return result;
+    } catch (error) {
+      console.error('Network error saving query:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Network error saving query' 
+      };
+    }
   }
 
   // Get all saved queries

@@ -16,6 +16,7 @@ interface Patent {
   inventor: string;
   assignee: string;
   patent_link: string;
+  patent_number?: string;
   pdf: string;
 }
 
@@ -298,7 +299,7 @@ const Search = () => {
                     <PatentCard
                       key={`${patent.title}-${index}`}
                       patent={{
-                        patent_id: patent.patent_link || `patent-${index}`,
+                        patent_id: patent.patent_number || patent.patent_link || `patent-${index}`,
                         title: patent.title,
                         abstract: patent.snippet,
                         assignee: patent.assignee,
@@ -329,7 +330,7 @@ const Search = () => {
 
       <PatentDrawer
         patent={selectedPatent ? {
-          patent_id: selectedPatent.patent_link || "unknown",
+          patent_id: selectedPatent.patent_number || selectedPatent.patent_link || "unknown",
           title: selectedPatent.title,
           abstract: selectedPatent.snippet,
           assignee: selectedPatent.assignee,

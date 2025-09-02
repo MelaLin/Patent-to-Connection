@@ -12,7 +12,49 @@ logger = logging.getLogger(__name__)
 class SerpAPIService:
     def __init__(self):
         self.api_key = settings.SERPAPI_API_KEY
-        self.base_url = "https://serpapi.com/search"
+        self.base_url = "https://serpapi.com/search.json"  # Fixed: should be .json
+    
+    def _extract_patent_number(self, link: str, title: str) -> str:
+        """Extract patent number from link or title"""
+        import re
+        
+        # Try to extract from Google Patents URL
+        if "patents.google.com/patent/" in link:
+            match = re.search(r'patents\.google\.com/patent/([A-Z0-9]+)', link)
+            if match:
+                return match.group(1)
+        
+        # Try to extract from other patent URLs
+        patent_patterns = [
+            r'patent/([A-Z0-9]+)',  # Generic patent pattern
+            r'([A-Z]{2,3}\d{1,3}[A-Z0-9]*)',  # US patent format like US1234567
+            r'([A-Z]{2}\d{6,7})',  # EP patent format like EP1234567
+        ]
+        
+        for pattern in patent_patterns:
+            match = re.search(pattern, link)
+            if match:
+                return match.group(1)
+        
+        # Try to extract from title (sometimes contains patent number)
+        for pattern in patent_patterns:
+            match = re.search(pattern, title)
+            if match:
+                return match.group(1)
+        
+        # If no patent number found, return a sanitized version of the link
+        # Remove common URL parts and keep only the identifier
+        if link:
+            # Extract the last part of the URL path
+            parts = link.split('/')
+            if len(parts) > 1:
+                last_part = parts[-1]
+                # Remove query parameters and file extensions
+                last_part = last_part.split('?')[0].split('#')[0]
+                if last_part and len(last_part) > 3:  # Must be at least 4 chars
+                    return last_part
+        
+        return ""
     
     async def search_patents(self, query: str, limit: int = 10, start_year: Optional[int] = None, end_year: Optional[int] = None) -> List[Dict]:
         """Search for patents using SerpAPI with optional year filtering"""
@@ -126,17 +168,25 @@ class SerpAPIService:
                 patents = []
                 for i, result in enumerate(organic_results):
                     try:
+                        # Extract patent number from the link or title
+                        patent_link = result.get("link", "")
+                        patent_number = self._extract_patent_number(patent_link, result.get("title", ""))
+                        
+                        # Construct proper Google Patents URL
+                        google_patents_url = f"https://patents.google.com/patent/{patent_number}" if patent_number else patent_link
+                        
                         patent = {
                             "title": result.get("title", ""),
                             "snippet": result.get("snippet", ""),
                             "publication_date": result.get("publication_date", ""),
                             "inventor": result.get("inventor", ""),
                             "assignee": result.get("assignee", ""),
-                            "patent_link": result.get("link", ""),
+                            "patent_link": google_patents_url,  # Use constructed URL
+                            "patent_number": patent_number,  # Add patent number for reference
                             "pdf": result.get("pdf", "")
                         }
                         patents.append(patent)
-                        logger.debug(f"Processed patent {i+1}: {patent.get('title', 'No title')}")
+                        logger.debug(f"Processed patent {i+1}: {patent.get('title', 'No title')} -> {patent_number}")
                     except Exception as e:
                         logger.warning(f"Error processing patent result {i+1}: {str(e)}")
                         continue
@@ -203,13 +253,21 @@ class SerpAPIService:
                         patents = []
                         for result in organic_results:
                             try:
+                                # Extract patent number from the link or title
+                                patent_link = result.get("link", "")
+                                patent_number = self._extract_patent_number(patent_link, result.get("title", ""))
+                                
+                                # Construct proper Google Patents URL
+                                google_patents_url = f"https://patents.google.com/patent/{patent_number}" if patent_number else patent_link
+                                
                                 patent = {
                                     "title": result.get("title", ""),
                                     "snippet": result.get("snippet", ""),
                                     "publication_date": result.get("publication_date", ""),
                                     "inventor": result.get("inventor", ""),
                                     "assignee": result.get("assignee", ""),
-                                    "patent_link": result.get("link", ""),
+                                    "patent_link": google_patents_url,  # Use constructed URL
+                                    "patent_number": patent_number,  # Add patent number for reference
                                     "pdf": result.get("pdf", "")
                                 }
                                 patents.append(patent)
