@@ -117,9 +117,18 @@ const Search = () => {
     
     setIsSavingQuery(true);
     try {
-      const result = await saveService.saveQuery({ query: currentSearchQuery.trim() });
+      const queryData = {
+        query: currentSearchQuery.trim(),
+        filters: {
+          yearFrom: currentFilters.yearRange[0],
+          yearTo: currentFilters.yearRange[1],
+          jurisdiction: currentFilters.jurisdiction
+        }
+      };
+
+      const result = await saveService.saveQueryNew(queryData);
       
-      if (result.success) {
+      if (result.ok) {
         toast({
           title: "Query Saved",
           description: `Search query "${currentSearchQuery.trim()}" has been saved to your Watchlist.`,

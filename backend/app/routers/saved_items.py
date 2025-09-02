@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
+import json
+import hashlib
 from datetime import datetime
 from app.core.database import get_db
 from app.models.saved_items import SavedPatent, SavedInventor, SavedQuery, SavedAlert
@@ -10,7 +12,10 @@ from app.schemas.saved_items import (
     SavedPatentCreate, SavedPatentResponse, 
     SavedInventorCreate, SavedInventorResponse,
     SavedQueryCreate, SavedQueryResponse,
-    SavedAlertCreate, SavedAlertResponse
+    SavedAlertCreate, SavedAlertResponse,
+    SavePatentRequest, SavePatentResponse,
+    SaveQueryRequest, SaveQueryResponse,
+    WatchlistResponse
 )
 from app.services.storage import storage_service
 
@@ -22,9 +27,215 @@ router = APIRouter()
 # Mock user authentication - replace with real auth later
 def get_current_user_id() -> str:
     """Mock function to get current user ID. Replace with real authentication."""
-    return "user_123"  # Hardcoded for now
+    return "dev"  # Use "dev" for development namespace
 
-# Patent endpoints
+def get_body(req: Request) -> Dict[str, Any]:
+    """Safely parse request body, handling double-stringified JSON"""
+    try:
+        body = req.body()
+        if isinstance(body, str):
+            try:
+                return json.loads(body)
+            except json.JSONDecodeError:
+                pass
+        return body
+    except Exception as e:
+        logger.error(f"Error parsing request body: {e}")
+        raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+
+def hash_query(query: str, filters: Optional[Dict[str, Any]] = None) -> str:
+    """Create a hash for query + filters for idempotency"""
+    content = json.dumps({"query": query, "filters": filters}, sort_keys=True)
+    return hashlib.sha256(content.encode()).hexdigest()
+
+# New API contract endpoints
+@router.post("/watchlist/patents", response_model=SavePatentResponse)
+async def save_patent_new(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Save a patent with idempotent upsert on patentNumber"""
+    try:
+        # Parse and validate request body
+        body = get_body(request)
+        logger.debug(f"POST /api/watchlist/patents body: {body}")
+        
+        patent_data = SavePatentRequest(**body)
+        
+        # Convert inventors from list of strings to list of dicts for compatibility
+        inventors_dict = [{"name": inv} for inv in patent_data.inventors]
+        
+        # Prepare data for upsert
+        upsert_data = {
+            "patent_number": patent_data.patentNumber,
+            "title": patent_data.title,
+            "abstract": patent_data.abstract,
+            "assignee": patent_data.assignee,
+            "inventors": inventors_dict,
+            "link": patent_data.googlePatentsLink,
+            "date_filed": patent_data.filingDate,
+            "google_patents_link": patent_data.googlePatentsLink,
+            "tags": patent_data.tags or [],
+            "user_id": current_user_id
+        }
+        
+        if storage_service.use_database:
+            # Use database storage with upsert
+            await db.execute("SELECT 1")  # Test connection
+            
+            # Check if patent already exists
+            result = await db.execute(
+                select(SavedPatent).where(
+                    and_(
+                        SavedPatent.patent_number == patent_data.patentNumber,
+                        SavedPatent.user_id == current_user_id
+                    )
+                )
+            )
+            existing_patent = result.scalar_one_or_none()
+            
+            if existing_patent:
+                # Update existing patent
+                for key, value in upsert_data.items():
+                    if key != "patent_number" and key != "user_id":
+                        setattr(existing_patent, key, value)
+                existing_patent.updated_at = datetime.now()
+                await db.commit()
+                await db.refresh(existing_patent)
+                logger.info(f"Updated existing patent: {existing_patent.id}")
+                return SavePatentResponse(ok=True, patent=existing_patent.__dict__)
+            else:
+                # Create new patent
+                db_patent = SavedPatent(**upsert_data)
+                db.add(db_patent)
+                await db.commit()
+                await db.refresh(db_patent)
+                logger.info(f"Created new patent: {db_patent.id}")
+                return SavePatentResponse(ok=True, patent=db_patent.__dict__)
+        else:
+            # Use file storage
+            patent_record = storage_service.save_patent_file(upsert_data, current_user_id)
+            logger.info(f"Saved patent to file: {patent_record['id']}")
+            return SavePatentResponse(ok=True, patent=patent_record)
+            
+    except Exception as e:
+        logger.error(f"save patent error: {e}", exc_info=True)
+        return SavePatentResponse(ok=False, error=str(e))
+
+@router.post("/watchlist/queries", response_model=SaveQueryResponse)
+async def save_query_new(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Save a query with idempotent upsert on hash"""
+    try:
+        # Parse and validate request body
+        body = get_body(request)
+        logger.debug(f"POST /api/watchlist/queries body: {body}")
+        
+        query_data = SaveQueryRequest(**body)
+        
+        # Create hash for idempotency
+        query_hash = hash_query(query_data.query, query_data.filters)
+        
+        # Prepare data for upsert
+        upsert_data = {
+            "query": query_data.query,
+            "filters": query_data.filters,
+            "hash": query_hash,
+            "user_id": current_user_id
+        }
+        
+        if storage_service.use_database:
+            # Use database storage with upsert
+            await db.execute("SELECT 1")  # Test connection
+            
+            # Check if query already exists
+            result = await db.execute(
+                select(SavedQuery).where(
+                    and_(
+                        SavedQuery.hash == query_hash,
+                        SavedQuery.user_id == current_user_id
+                    )
+                )
+            )
+            existing_query = result.scalar_one_or_none()
+            
+            if existing_query:
+                # Update existing query
+                existing_query.query = query_data.query
+                existing_query.filters = query_data.filters
+                existing_query.updated_at = datetime.now()
+                await db.commit()
+                await db.refresh(existing_query)
+                logger.info(f"Updated existing query: {existing_query.id}")
+                return SaveQueryResponse(ok=True, query=existing_query.__dict__)
+            else:
+                # Create new query
+                db_query = SavedQuery(**upsert_data)
+                db.add(db_query)
+                await db.commit()
+                await db.refresh(db_query)
+                logger.info(f"Created new query: {db_query.id}")
+                return SaveQueryResponse(ok=True, query=db_query.__dict__)
+        else:
+            # Use file storage
+            query_record = storage_service.save_query_file(query_data.query, current_user_id)
+            logger.info(f"Saved query to file: {query_record['id']}")
+            return SaveQueryResponse(ok=True, query=query_record)
+            
+    except Exception as e:
+        logger.error(f"save query error: {e}", exc_info=True)
+        return SaveQueryResponse(ok=False, error=str(e))
+
+@router.get("/watchlist", response_model=WatchlistResponse)
+async def get_watchlist_new(
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Get all saved patents and queries"""
+    try:
+        if storage_service.use_database:
+            # Use database storage
+            await db.execute("SELECT 1")  # Test connection
+            
+            # Get saved patents
+            patents_result = await db.execute(
+                select(SavedPatent)
+                .where(SavedPatent.user_id == current_user_id)
+                .order_by(SavedPatent.created_at.desc())
+            )
+            patents = patents_result.scalars().all()
+            
+            # Get saved queries
+            queries_result = await db.execute(
+                select(SavedQuery)
+                .where(SavedQuery.user_id == current_user_id)
+                .order_by(SavedQuery.created_at.desc())
+            )
+            queries = queries_result.scalars().all()
+            
+            return WatchlistResponse(
+                ok=True,
+                patents=[patent.__dict__ for patent in patents],
+                queries=[query.__dict__ for query in queries]
+            )
+        else:
+            # Use file storage
+            watchlist_data = storage_service.get_watchlist_file(current_user_id)
+            return WatchlistResponse(
+                ok=True,
+                patents=watchlist_data.get("patents", []),
+                queries=watchlist_data.get("queries", [])
+            )
+            
+    except Exception as e:
+        logger.error(f"fetch watchlist error: {e}", exc_info=True)
+        return WatchlistResponse(ok=False, error="Server error")
+
+# Legacy endpoints for backward compatibility
 @router.post("/savePatent", response_model=Dict[str, Any])
 async def save_patent(
     patent_data: SavedPatentCreate,
@@ -181,7 +392,7 @@ async def create_alert(
     db: AsyncSession = Depends(get_db),
     current_user_id: str = Depends(get_current_user_id)
 ):
-    """Create a new alert"""
+    
     logger.info(f"Creating alert for query: {alert_data.query} with frequency: {alert_data.frequency}")
     
     # Validate frequency

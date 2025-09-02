@@ -56,12 +56,15 @@ class StorageService:
     async def save_patent_db(self, db: AsyncSession, patent_data: Dict[str, Any], user_id: str) -> SavedPatent:
         """Save patent to database"""
         db_patent = SavedPatent(
+            patent_number=patent_data.get("patent_number"),
             title=patent_data["title"],
             abstract=patent_data["abstract"],
             assignee=patent_data["assignee"],
             inventors=patent_data["inventors"],
             link=patent_data.get("link"),
             date_filed=patent_data.get("date_filed"),
+            google_patents_link=patent_data.get("google_patents_link"),
+            tags=patent_data.get("tags", []),
             user_id=user_id
         )
         db.add(db_patent)
@@ -69,9 +72,14 @@ class StorageService:
         await db.refresh(db_patent)
         return db_patent
     
-    async def save_query_db(self, db: AsyncSession, query: str, user_id: str) -> SavedQuery:
+    async def save_query_db(self, db: AsyncSession, query: str, user_id: str, filters: Optional[Dict[str, Any]] = None, hash_value: Optional[str] = None) -> SavedQuery:
         """Save query to database"""
-        db_query = SavedQuery(query=query, user_id=user_id)
+        db_query = SavedQuery(
+            query=query, 
+            user_id=user_id,
+            filters=filters,
+            hash=hash_value
+        )
         db.add(db_query)
         await db.commit()
         await db.refresh(db_query)
@@ -92,14 +100,18 @@ class StorageService:
         
         patent_record = {
             "id": len(patents) + 1,
+            "patent_number": patent_data.get("patent_number"),
             "title": patent_data["title"],
             "abstract": patent_data["abstract"],
             "assignee": patent_data["assignee"],
             "inventors": patent_data["inventors"],
             "link": patent_data.get("link"),
             "date_filed": patent_data.get("date_filed"),
+            "google_patents_link": patent_data.get("google_patents_link"),
+            "tags": patent_data.get("tags", []),
             "user_id": user_id,
-            "saved_at": datetime.now().isoformat()
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
         }
         
         patents.append(patent_record)
@@ -107,15 +119,18 @@ class StorageService:
             return patent_record
         raise Exception("Failed to save patent to file")
     
-    def save_query_file(self, query: str, user_id: str) -> Dict[str, Any]:
+    def save_query_file(self, query: str, user_id: str, filters: Optional[Dict[str, Any]] = None, hash_value: Optional[str] = None) -> Dict[str, Any]:
         """Save query to file"""
         queries = self._load_json_file("queries.json")
         
         query_record = {
             "id": len(queries) + 1,
             "query": query,
+            "filters": filters,
+            "hash": hash_value,
             "user_id": user_id,
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
         }
         
         queries.append(query_record)

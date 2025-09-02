@@ -46,18 +46,21 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
   const handleSavePatent = async () => {
     setIsSaving(true);
     try {
-      const patentData: PatentSaveData = {
+      // Convert patent data to new API format
+      const patentData = {
+        patentNumber: patent.patent_id,
         title: patent.title,
         abstract: patent.abstract,
         assignee: patent.assignee,
-        inventors: patent.inventors,
-        link: patent.google_patents_url,
-        date_filed: patent.year ? new Date(patent.year, 0, 1).toISOString() : undefined,
+        inventors: patent.inventors.map(inv => inv.name),
+        filingDate: patent.year ? new Date(patent.year, 0, 1).toISOString() : undefined,
+        googlePatentsLink: patent.google_patents_url,
+        tags: [] // Could be extracted from search context later
       };
 
-      const result = await saveService.savePatent(patentData);
+      const result = await saveService.savePatentNew(patentData);
       
-      if (result.success) {
+      if (result.ok) {
         setIsWatched(true);
         toast({
           title: "Saved to Watchlist",

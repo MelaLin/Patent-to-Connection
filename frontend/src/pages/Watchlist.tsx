@@ -31,8 +31,16 @@ const Watchlist = () => {
   const loadWatchlist = async () => {
     try {
       setLoading(true);
-      const data = await saveService.getWatchlist();
-      setWatchlistData(data);
+      const data = await saveService.getWatchlistNew();
+      if (data.ok) {
+        setWatchlistData({ patents: data.patents, queries: data.queries });
+      } else {
+        toast({
+          title: "Load Failed",
+          description: data.error || "Failed to load watchlist",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Failed to load watchlist:', error);
       toast({
@@ -50,9 +58,14 @@ const Watchlist = () => {
     
     setIsCreatingQuery(true);
     try {
-      const result = await saveService.saveQuery({ query: newQuery.trim() });
+      const queryData = {
+        query: newQuery.trim(),
+        filters: {}
+      };
+
+      const result = await saveService.saveQueryNew(queryData);
       
-      if (result.success) {
+      if (result.ok) {
         toast({
           title: "Query Saved",
           description: `Search query "${newQuery.trim()}" has been saved.`,

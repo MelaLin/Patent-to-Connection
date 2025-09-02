@@ -65,9 +65,118 @@ export interface WatchlistData {
   queries: SavedQuery[];
 }
 
+// New API contract interfaces
+export interface SavePatentRequest {
+  patentNumber: string;
+  title: string;
+  abstract: string;
+  assignee: string;
+  inventors: string[];
+  filingDate?: string;
+  googlePatentsLink?: string;
+  tags?: string[];
+}
+
+export interface SaveQueryRequest {
+  query: string;
+  filters?: Record<string, any>;
+}
+
+export interface SavePatentResponse {
+  ok: boolean;
+  patent?: any;
+  error?: string;
+}
+
+export interface SaveQueryResponse {
+  ok: boolean;
+  query?: any;
+  error?: string;
+}
+
+export interface WatchlistResponse {
+  ok: boolean;
+  patents: any[];
+  queries: any[];
+  error?: string;
+}
+
 class SaveService {
   private baseUrl = '/api';
 
+  // New API contract methods
+  async savePatentNew(patentData: SavePatentRequest): Promise<SavePatentResponse> {
+    console.debug("save patent payload", patentData);
+    
+    try {
+      const response = await fetch(`${this.baseUrl}/watchlist/patents`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(patentData),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Save patent failed");
+      }
+      return data;
+    } catch (error) {
+      console.error('Network error saving patent:', error);
+      return { 
+        ok: false, 
+        error: error instanceof Error ? error.message : 'Network error saving patent' 
+      };
+    }
+  }
+
+  async saveQueryNew(queryData: SaveQueryRequest): Promise<SaveQueryResponse> {
+    console.debug("save query payload", queryData);
+    
+    try {
+      const response = await fetch(`${this.baseUrl}/watchlist/queries`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(queryData),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Save query failed");
+      }
+      return data;
+    } catch (error) {
+      console.error('Network error saving query:', error);
+      return { 
+        ok: false, 
+        error: error instanceof Error ? error.message : 'Network error saving query' 
+      };
+    }
+  }
+
+  async getWatchlistNew(): Promise<WatchlistResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/watchlist`);
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Failed to fetch watchlist");
+      }
+      return data;
+    } catch (error) {
+      console.error('Network error fetching watchlist:', error);
+      return { 
+        ok: false, 
+        patents: [], 
+        queries: [], 
+        error: error instanceof Error ? error.message : 'Network error fetching watchlist' 
+      };
+    }
+  }
+
+  // Legacy methods for backward compatibility
   // Save a patent
   async savePatent(patentData: PatentSaveData): Promise<{ success: boolean; data?: SavedPatent; error?: string }> {
     console.log('Sending patent data:', patentData);
