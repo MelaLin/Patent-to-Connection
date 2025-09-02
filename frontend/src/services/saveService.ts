@@ -20,6 +20,21 @@ export interface SavedInventor {
   created_at: string;
 }
 
+export interface SavedQuery {
+  id: number;
+  query: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface SavedAlert {
+  id: number;
+  query: string;
+  frequency: string;
+  user_id: string;
+  created_at: string;
+}
+
 export interface PatentSaveData {
   title: string;
   abstract: string;
@@ -33,6 +48,15 @@ export interface InventorSaveData {
   name: string;
   linkedin_url?: string;
   associated_patent_id?: number;
+}
+
+export interface QuerySaveData {
+  query: string;
+}
+
+export interface AlertCreateData {
+  query: string;
+  frequency: string; // "daily", "weekly", "monthly"
 }
 
 class SaveService {
@@ -126,6 +150,98 @@ class SaveService {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Failed to fetch saved inventors');
+    }
+
+    return response.json();
+  }
+
+  // Save a query
+  async saveQuery(queryData: QuerySaveData): Promise<SavedQuery> {
+    console.log('Sending query data:', queryData);
+    
+    const response = await fetch(`${this.baseUrl}/saveQuery`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(queryData),
+    });
+
+    console.log('Response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      
+      let errorDetail = 'Failed to save query';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.detail || errorDetail;
+      } catch (e) {
+        errorDetail = errorText || errorDetail;
+      }
+      
+      throw new Error(errorDetail);
+    }
+
+    const result = await response.json();
+    console.log('Save query result:', result);
+    return result;
+  }
+
+  // Get all saved queries
+  async getSavedQueries(): Promise<SavedQuery[]> {
+    const response = await fetch(`${this.baseUrl}/queries/saved`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch saved queries');
+    }
+
+    return response.json();
+  }
+
+  // Create an alert
+  async createAlert(alertData: AlertCreateData): Promise<SavedAlert> {
+    console.log('Sending alert data:', alertData);
+    
+    const response = await fetch(`${this.baseUrl}/createAlert`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(alertData),
+    });
+
+    console.log('Response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      
+      let errorDetail = 'Failed to create alert';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.detail || errorDetail;
+      } catch (e) {
+        errorDetail = errorText || errorDetail;
+      }
+      
+      throw new Error(errorDetail);
+    }
+
+    const result = await response.json();
+    console.log('Create alert result:', result);
+    return result;
+  }
+
+  // Get all saved alerts
+  async getSavedAlerts(): Promise<SavedAlert[]> {
+    const response = await fetch(`${this.baseUrl}/alerts/saved`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch saved alerts');
     }
 
     return response.json();

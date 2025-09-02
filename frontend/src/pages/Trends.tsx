@@ -2,14 +2,53 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, ExternalLink } from "lucide-react";
+import { CalendarIcon, ExternalLink, Bell } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { saveService } from "@/services/saveService";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const Trends = () => {
   const [dateRange, setDateRange] = useState<Date | undefined>(new Date());
+  const [isCreatingAlert, setIsCreatingAlert] = useState(false);
+  const [alertQuery, setAlertQuery] = useState("");
+  const [alertFrequency, setAlertFrequency] = useState("weekly");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleCreateAlert = async () => {
+    if (!alertQuery.trim()) return;
+    
+    setIsCreatingAlert(true);
+    try {
+      await saveService.createAlert({
+        query: alertQuery.trim(),
+        frequency: alertFrequency
+      });
+      toast({
+        title: "Alert Created",
+        description: `Alert for "${alertQuery.trim()}" has been created with ${alertFrequency} frequency.`,
+      });
+      setIsDialogOpen(false);
+      setAlertQuery("");
+      setAlertFrequency("weekly");
+    } catch (error) {
+      console.error('Failed to create alert:', error);
+      toast({
+        title: "Alert Creation Failed",
+        description: error instanceof Error ? error.message : "Failed to create alert",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingAlert(false);
+    }
+  };
 
   // Mock data for charts
   const topAssignees = [
@@ -67,7 +106,7 @@ const Trends = () => {
           </p>
         </div>
         
-        {/* Date Range Picker */}
+        {/* Date Range Picker and Create Alert */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Period:</span>
           <Popover>
@@ -93,6 +132,61 @@ const Trends = () => {
               />
             </PopoverContent>
           </Popover>
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Bell className="h-4 w-4 mr-2" />
+                Create Alert
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Patent Alert</DialogTitle>
+                <DialogDescription>
+                  Set up an alert to be notified when new patents match your search criteria.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="alert-query">Search Query</Label>
+                  <Input
+                    id="alert-query"
+                    placeholder="e.g., solar panels, wind turbine, AI"
+                    value={alertQuery}
+                    onChange={(e) => setAlertQuery(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="alert-frequency">Alert Frequency</Label>
+                  <Select value={alertFrequency} onValueChange={setAlertFrequency}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateAlert}
+                  disabled={isCreatingAlert || !alertQuery.trim()}
+                >
+                  {isCreatingAlert ? "Creating..." : "Create Alert"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

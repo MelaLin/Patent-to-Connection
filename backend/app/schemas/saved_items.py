@@ -35,3 +35,25 @@ class SavedInventorResponse(BaseModel):
     associated_patent_id: Optional[int] = None
     user_id: str
     created_at: datetime
+
+class SavedQueryCreate(BaseModel):
+    query: str
+    # user_id is handled by the backend, not sent by frontend
+
+class SavedQueryResponse(BaseModel):
+    id: int
+    query: str
+    user_id: str
+    created_at: datetime
+
+class SavedAlertCreate(BaseModel):
+    query: str
+    frequency: str  # e.g., "daily", "weekly", "monthly"
+    # user_id is handled by the backend, not sent by frontend
+
+class SavedAlertResponse(BaseModel):
+    id: int
+    query: str
+    frequency: str
+    user_id: str
+    created_at: datetime

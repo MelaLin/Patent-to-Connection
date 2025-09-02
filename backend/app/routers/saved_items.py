@@ -5,8 +5,14 @@ from typing import List
 import logging
 from datetime import datetime
 from app.core.database import get_db
-from app.models.saved_items import SavedPatent, SavedInventor
-from app.schemas.saved_items import SavedPatentCreate, SavedPatentResponse, SavedInventorCreate, SavedInventorResponse
+from app.models.saved_items import SavedPatent, SavedInventor, SavedQuery, SavedAlert
+from app.schemas.saved_items import (
+    SavedPatentCreate, SavedPatentResponse, 
+    SavedInventorCreate, SavedInventorResponse,
+    SavedQueryCreate, SavedQueryResponse,
+    SavedAlertCreate, SavedAlertResponse
+)
+from app.services.storage import storage_service
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -18,6 +24,7 @@ def get_current_user_id() -> str:
     """Mock function to get current user ID. Replace with real authentication."""
     return "user_123"  # Hardcoded for now
 
+# Patent endpoints
 @router.post("/patents/save", response_model=SavedPatentResponse)
 async def save_patent(
     patent_data: SavedPatentCreate,
@@ -113,6 +120,129 @@ async def get_saved_patents(
         logger.error(f"Failed to fetch saved patents: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to fetch saved patents: {str(e)}")
 
+# Query endpoints
+@router.post("/saveQuery", response_model=SavedQueryResponse)
+async def save_query(
+    query_data: SavedQueryCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Save a search query"""
+    logger.info(f"Saving query: {query_data.query}")
+    
+    try:
+        if storage_service.use_database:
+            # Use database storage
+            await db.execute("SELECT 1")  # Test connection
+            db_query = await storage_service.save_query_db(db, query_data.query, current_user_id)
+            logger.info(f"Successfully saved query with ID: {db_query.id}")
+            return db_query
+        else:
+            # Use file storage
+            query_record = storage_service.save_query_file(query_data.query, current_user_id)
+            logger.info(f"Successfully saved query with ID: {query_record['id']}")
+            return SavedQueryResponse(**query_record)
+            
+    except Exception as e:
+        logger.error(f"Failed to save query: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to save query: {str(e)}")
+
+@router.get("/queries/saved", response_model=List[SavedQueryResponse])
+async def get_saved_queries(
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Get all queries saved by the current user"""
+    logger.info(f"Fetching saved queries for user: {current_user_id}")
+    
+    try:
+        if storage_service.use_database:
+            # Use database storage
+            result = await db.execute(
+                select(SavedQuery)
+                .where(SavedQuery.user_id == current_user_id)
+                .order_by(SavedQuery.created_at.desc())
+            )
+            queries = result.scalars().all()
+            logger.info(f"Found {len(queries)} saved queries for user {current_user_id}")
+            return queries
+        else:
+            # Use file storage
+            queries = storage_service._load_json_file("queries.json")
+            user_queries = [q for q in queries if q.get("user_id") == current_user_id]
+            logger.info(f"Found {len(user_queries)} saved queries for user {current_user_id}")
+            return [SavedQueryResponse(**q) for q in user_queries]
+            
+    except Exception as e:
+        logger.error(f"Failed to fetch saved queries: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch saved queries: {str(e)}")
+
+# Alert endpoints
+@router.post("/createAlert", response_model=SavedAlertResponse)
+async def create_alert(
+    alert_data: SavedAlertCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Create a new alert"""
+    logger.info(f"Creating alert for query: {alert_data.query} with frequency: {alert_data.frequency}")
+    
+    # Validate frequency
+    valid_frequencies = ["daily", "weekly", "monthly"]
+    if alert_data.frequency not in valid_frequencies:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid frequency. Must be one of: {', '.join(valid_frequencies)}"
+        )
+    
+    try:
+        if storage_service.use_database:
+            # Use database storage
+            await db.execute("SELECT 1")  # Test connection
+            db_alert = await storage_service.save_alert_db(db, alert_data.query, alert_data.frequency, current_user_id)
+            logger.info(f"Successfully created alert with ID: {db_alert.id}")
+            return db_alert
+        else:
+            # Use file storage
+            alert_record = storage_service.save_alert_file(alert_data.query, alert_data.frequency, current_user_id)
+            logger.info(f"Successfully created alert with ID: {alert_record['id']}")
+            return SavedAlertResponse(**alert_record)
+            
+    except Exception as e:
+        logger.error(f"Failed to create alert: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to create alert: {str(e)}")
+
+@router.get("/alerts/saved", response_model=List[SavedAlertResponse])
+async def get_saved_alerts(
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Get all alerts saved by the current user"""
+    logger.info(f"Fetching saved alerts for user: {current_user_id}")
+    
+    try:
+        if storage_service.use_database:
+            # Use database storage
+            result = await db.execute(
+                select(SavedAlert)
+                .where(SavedAlert.user_id == current_user_id)
+                .order_by(SavedAlert.created_at.desc())
+            )
+            alerts = result.scalars().all()
+            logger.info(f"Found {len(alerts)} saved alerts for user {current_user_id}")
+            return alerts
+        else:
+            # Use file storage
+            alerts = storage_service._load_json_file("alerts.json")
+            user_alerts = [a for a in alerts if a.get("user_id") == current_user_id]
+            logger.info(f"Found {len(user_alerts)} saved alerts for user {current_user_id}")
+            return [SavedAlertResponse(**a) for a in user_alerts]
+            
+    except Exception as e:
+        logger.error(f"Failed to fetch saved alerts: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch saved alerts: {str(e)}")
+
+# Inventor endpoints (keeping existing ones)
 @router.post("/inventors/save", response_model=SavedInventorResponse)
 async def save_inventor(
     inventor_data: SavedInventorCreate,
