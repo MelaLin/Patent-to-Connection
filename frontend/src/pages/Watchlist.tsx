@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PatentCard } from "@/components/PatentCard";
 import { PatentDrawer } from "@/components/PatentDrawer";
-import { Trash2, Bell, Search, Plus } from "lucide-react";
+import { Trash2, Bell, Search, Plus, Linkedin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveService, WatchlistData, SavedPatent, SavedQuery } from "@/services/saveService";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 const Watchlist = () => {
   const [selectedPatent, setSelectedPatent] = useState<any>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [watchlistData, setWatchlistData] = useState<WatchlistData>({ patents: [], queries: [] });
+  const [watchlistData, setWatchlistData] = useState<WatchlistData>({ patents: [], queries: [], inventors: [] });
   const [loading, setLoading] = useState(true);
   const [isCreatingQuery, setIsCreatingQuery] = useState(false);
   const [newQuery, setNewQuery] = useState("");
@@ -31,16 +31,8 @@ const Watchlist = () => {
   const loadWatchlist = async () => {
     try {
       setLoading(true);
-      const data = await saveService.getWatchlistNew();
-      if (data.ok) {
-        setWatchlistData({ patents: data.patents, queries: data.queries });
-      } else {
-        toast({
-          title: "Load Failed",
-          description: data.error || "Failed to load watchlist",
-          variant: "destructive",
-        });
-      }
+      const data = await saveService.getWatchlist();
+      setWatchlistData(data);
     } catch (error) {
       console.error('Failed to load watchlist:', error);
       toast({
@@ -63,9 +55,9 @@ const Watchlist = () => {
         filters: {}
       };
 
-      const result = await saveService.saveQueryNew(queryData);
+      const result = await saveService.saveQuery(queryData);
       
-      if (result.ok) {
+      if (result.success) {
         toast({
           title: "Query Saved",
           description: `Search query "${newQuery.trim()}" has been saved.`,
@@ -133,7 +125,7 @@ const Watchlist = () => {
         </p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-8 lg:grid-cols-3">
         {/* Saved Queries */}
         <Card className="patent-card">
           <CardHeader>
@@ -294,13 +286,67 @@ const Watchlist = () => {
                         >
                           Details
                         </Button>
-                        <Button size="sm" variant="outline">
-                          Share
-                        </Button>
                       </div>
                     </div>
                   );
                 })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Saved Inventors */}
+        <Card className="patent-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Linkedin className="h-5 w-5" />
+              Saved Inventors
+            </CardTitle>
+            <CardDescription>
+              Inventors you've bookmarked for tracking
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {watchlistData.inventors.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No saved inventors yet. Save inventors from patent cards to see them here.
+                </div>
+              ) : (
+                watchlistData.inventors.map((inventor) => (
+                  <div key={inventor.id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="space-y-1 flex-1">
+                        <h3 className="font-medium text-sm leading-tight">{inventor.name}</h3>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>Saved {new Date(inventor.created_at).toLocaleDateString()}</span>
+                          {inventor.associated_patent_id && (
+                            <>
+                              <span>•</span>
+                              <span>Patent: {inventor.associated_patent_id}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {inventor.linkedin_url && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => window.open(inventor.linkedin_url, '_blank')}
+                        >
+                          <Linkedin className="h-4 w-4 mr-2" />
+                          LinkedIn
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </CardContent>

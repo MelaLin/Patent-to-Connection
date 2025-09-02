@@ -46,21 +46,18 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
   const handleSavePatent = async () => {
     setIsSaving(true);
     try {
-      // Convert patent data to new API format
-      const patentData = {
-        patentNumber: patent.patent_id,
+      const patentData: PatentSaveData = {
         title: patent.title,
         abstract: patent.abstract,
         assignee: patent.assignee,
-        inventors: patent.inventors.map(inv => inv.name),
-        filingDate: patent.year ? new Date(patent.year, 0, 1).toISOString() : undefined,
-        googlePatentsLink: patent.google_patents_url,
-        tags: [] // Could be extracted from search context later
+        inventors: patent.inventors,
+        link: patent.google_patents_url,
+        date_filed: patent.year ? new Date(patent.year, 0, 1).toISOString() : undefined
       };
 
-      const result = await saveService.savePatentNew(patentData);
+      const result = await saveService.savePatent(patentData);
       
-      if (result.ok) {
+      if (result.success) {
         setIsWatched(true);
         toast({
           title: "Saved to Watchlist",
@@ -87,15 +84,24 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
 
   const handleSaveInventor = async (inventor: { name: string; linkedin_url?: string }) => {
     try {
-      await saveService.saveInventor({
+      const result = await saveService.saveInventor({
         name: inventor.name,
         linkedin_url: inventor.linkedin_url,
+        associated_patent_id: patent.patent_id
       });
 
-      toast({
-        title: "Inventor Saved",
-        description: `${inventor.name} has been saved to your collection.`,
-      });
+      if (result.success) {
+        toast({
+          title: "Inventor Saved",
+          description: `${inventor.name} has been saved to your collection.`,
+        });
+      } else {
+        toast({
+          title: "Save Failed",
+          description: result.error || "Failed to save inventor",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Failed to save inventor:', error);
       toast({

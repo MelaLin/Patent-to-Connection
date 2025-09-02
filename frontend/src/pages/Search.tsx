@@ -126,9 +126,9 @@ const Search = () => {
         }
       };
 
-      const result = await saveService.saveQueryNew(queryData);
+      const result = await saveService.saveQuery(queryData);
       
-      if (result.ok) {
+      if (result.success) {
         toast({
           title: "Query Saved",
           description: `Search query "${currentSearchQuery.trim()}" has been saved to your Watchlist.`,

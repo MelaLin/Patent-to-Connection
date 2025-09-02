@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patent Scout - Express Backend Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 18px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.success {
+            background: #28a745;
+            color: white;
+        }
+        .status.error {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Patent Scout - Express Backend Test</h1>
+        
+        <div class="test-section">
+            <h2>Test Save Patent</h2>
+            <button onclick="testSavePatent()">Save Patent</button>
+            <div id="savePatentResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Save Query</h2>
+            <button onclick="testSaveQuery()">Save Query</button>
+            <div id="saveQueryResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Save Inventor</h2>
+            <button onclick="testSaveInventor()">Save Inventor</button>
+            <div id="saveInventorResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Get Watchlist</h2>
+            <button onclick="testGetWatchlist()">Get Watchlist</button>
+            <div id="getWatchlistResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+        
+        async function testSavePatent() {
+            const resultDiv = document.getElementById('savePatentResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/savePatent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: 'AI-Powered Patent Analysis',
+                        abstract: 'A machine learning system for analyzing patent documents and extracting key insights',
+                        assignee: 'TechCorp Inc',
+                        inventors: [
+                            { name: 'Dr. Alex Chen', linkedin_url: 'https://linkedin.com/in/alexchen' }
+                        ],
+                        link: 'https://patents.google.com/patent/US1111111',
+                        date_filed: '2024-03-15'
+                    })
+                });
+                
+                const data = await response.json();
+                const isSuccess = response.ok && data.success;
+                
+                resultDiv.innerHTML = `
+                    <span class="status ${isSuccess ? 'success' : 'error'}">
+                        ${isSuccess ? 'SUCCESS' : 'ERROR'}
+                    </span>
+                    <div class="result ${isSuccess ? 'success' : 'error'}">
+                        ${JSON.stringify(data, null, 2)}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <span class="status error">ERROR</span>
+                    <div class="result error">
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testSaveQuery() {
+            const resultDiv = document.getElementById('saveQueryResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/saveQuery`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: 'artificial intelligence machine learning',
+                        filters: {
+                            yearFrom: 2020,
+                            yearTo: 2024,
+                            jurisdiction: 'US'
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                const isSuccess = response.ok && data.success;
+                
+                resultDiv.innerHTML = `
+                    <span class="status ${isSuccess ? 'success' : 'error'}">
+                        ${isSuccess ? 'SUCCESS' : 'ERROR'}
+                    </span>
+                    <div class="result ${isSuccess ? 'success' : 'error'}">
+                        ${JSON.stringify(data, null, 2)}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <span class="status error">ERROR</span>
+                    <div class="result error">
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testSaveInventor() {
+            const resultDiv = document.getElementById('saveInventorResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/saveInventor`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: 'Dr. Alex Chen',
+                        linkedin_url: 'https://linkedin.com/in/alexchen',
+                        associated_patent_id: 'US1111111'
+                    })
+                });
+                
+                const data = await response.json();
+                const isSuccess = response.ok && data.success;
+                
+                resultDiv.innerHTML = `
+                    <span class="status ${isSuccess ? 'success' : 'error'}">
+                        ${isSuccess ? 'SUCCESS' : 'ERROR'}
+                    </span>
+                    <div class="result ${isSuccess ? 'success' : 'error'}">
+                        ${JSON.stringify(data, null, 2)}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <span class="status error">ERROR</span>
+                    <div class="result error">
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testGetWatchlist() {
+            const resultDiv = document.getElementById('getWatchlistResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/watchlist`);
+                const data = await response.json();
+                const isSuccess = response.ok;
+                
+                resultDiv.innerHTML = `
+                    <span class="status ${isSuccess ? 'success' : 'error'}">
+                        ${isSuccess ? 'SUCCESS' : 'ERROR'}
+                    </span>
+                    <div class="result ${isSuccess ? 'success' : 'error'}">
+                        ${JSON.stringify(data, null, 2)}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <span class="status error">ERROR</span>
+                    <div class="result error">
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
