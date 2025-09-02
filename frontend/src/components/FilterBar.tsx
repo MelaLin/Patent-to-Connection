@@ -7,7 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export function FilterBar() {
+interface FilterBarProps {
+  onFiltersChange?: (filters: {
+    yearRange: [number, number];
+    selectedAssignees: string[];
+    jurisdiction: string;
+  }) => void;
+}
+
+export function FilterBar({ onFiltersChange }: FilterBarProps) {
   const [yearRange, setYearRange] = useState([2020, 2024]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [jurisdiction, setJurisdiction] = useState("any");
@@ -36,6 +44,17 @@ export function FilterBar() {
     setYearRange([2020, 2024]);
     setSelectedAssignees([]);
     setJurisdiction("any");
+  };
+
+  const applyFilters = () => {
+    if (onFiltersChange) {
+      onFiltersChange({
+        yearRange,
+        selectedAssignees,
+        jurisdiction
+      });
+    }
+    setFiltersOpen(false);
   };
 
   const activeFilterCount = 
@@ -137,7 +156,7 @@ export function FilterBar() {
                   <Button onClick={clearFilters} variant="outline" size="sm" className="flex-1">
                     Clear All
                   </Button>
-                  <Button onClick={() => setFiltersOpen(false)} size="sm" className="flex-1">
+                  <Button onClick={applyFilters} size="sm" className="flex-1">
                     Apply Filters
                   </Button>
                 </div>

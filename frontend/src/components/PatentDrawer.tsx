@@ -2,7 +2,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ExternalLink, Bookmark, Bell, X, Linkedin, Search } from "lucide-react";
+import { ExternalLink, Bookmark, X, Linkedin, Search } from "lucide-react";
 
 interface Patent {
   patent_id: string;
@@ -202,7 +202,7 @@ export function PatentDrawer({ patent, open, onOpenChange, searchQuery = "" }: P
 
           {/* Actions */}
           <div className="space-y-4 pt-4 border-t">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Button
                 variant={isWatched ? "default" : "outline"}
                 onClick={() => setIsWatched(!isWatched)}
@@ -210,10 +210,6 @@ export function PatentDrawer({ patent, open, onOpenChange, searchQuery = "" }: P
               >
                 <Bookmark className={`mr-2 h-4 w-4 ${isWatched ? "fill-current" : ""}`} />
                 {isWatched ? "Added to Watchlist" : "Add to Watchlist"}
-              </Button>
-              <Button variant="outline" className="w-full">
-                <Bell className="mr-2 h-4 w-4" />
-                Create Alert
               </Button>
             </div>
             

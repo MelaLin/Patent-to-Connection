@@ -14,9 +14,9 @@ class SerpAPIService:
         self.api_key = settings.SERPAPI_API_KEY
         self.base_url = "https://serpapi.com/search"
     
-    async def search_patents(self, query: str, limit: int = 10) -> List[Dict]:
-        """Search for patents using SerpAPI"""
-        logger.info(f"Searching patents with query: '{query}', limit: {limit}")
+    async def search_patents(self, query: str, limit: int = 10, start_year: Optional[int] = None, end_year: Optional[int] = None) -> List[Dict]:
+        """Search for patents using SerpAPI with optional year filtering"""
+        logger.info(f"Searching patents with query: '{query}', limit: {limit}, year range: {start_year}-{end_year}")
         
         if not self.api_key:
             logger.error("SERPAPI_API_KEY not configured")
@@ -29,11 +29,23 @@ class SerpAPIService:
         encoded_query = urllib.parse.quote(query.strip())
         logger.info(f"Encoded query: '{encoded_query}'")
         
+        # Build query with year range if specified
+        search_query = query.strip()
+        if start_year and end_year:
+            search_query = f"{query.strip()} year:{start_year}-{end_year}"
+            logger.info(f"Added year filter to query: '{search_query}'")
+        elif start_year:
+            search_query = f"{query.strip()} year:{start_year}-"
+            logger.info(f"Added start year filter to query: '{search_query}'")
+        elif end_year:
+            search_query = f"{query.strip()} year:-{end_year}"
+            logger.info(f"Added end year filter to query: '{search_query}'")
+        
         # Try different parameter combinations for better results
         params = {
             "api_key": self.api_key,
             "engine": "google_patents",
-            "q": query.strip(),
+            "q": search_query,
             "num": limit,
             "hl": "en",  # Language
             "gl": "us"   # Country
@@ -45,7 +57,7 @@ class SerpAPIService:
                 logger.info(f"Request params: {params}")
                 
                 # Log the actual URL being called
-                url = f"{self.base_url}?api_key={self.api_key}&engine=google_patents&q={encoded_query}&num={limit}&hl=en&gl=us"
+                url = f"{self.base_url}?api_key={self.api_key}&engine=google_patents&q={urllib.parse.quote(search_query)}&num={limit}&hl=en&gl=us"
                 logger.info(f"Actual URL (for debugging): {url}")
                 
                 response = await client.get(self.base_url, params=params)
@@ -109,7 +121,7 @@ class SerpAPIService:
                     
                     # Try alternative search approach if no results
                     logger.info("Trying alternative search approach...")
-                    return await self._try_alternative_search(query, limit)
+                    return await self._try_alternative_search(query, limit, start_year, end_year)
                 
                 patents = []
                 for i, result in enumerate(organic_results):
@@ -154,15 +166,24 @@ class SerpAPIService:
                 detail=f"Unexpected error in SerpAPI search: {str(e)}"
             )
     
-    async def _try_alternative_search(self, query: str, limit: int) -> List[Dict]:
+    async def _try_alternative_search(self, query: str, limit: int, start_year: Optional[int] = None, end_year: Optional[int] = None) -> List[Dict]:
         """Try alternative search approach when primary search fails"""
-        logger.info(f"Trying alternative search for: '{query}'")
+        logger.info(f"Trying alternative search for: '{query}' with year range: {start_year}-{end_year}")
+        
+        # Build query with year range if specified
+        search_query = query.strip()
+        if start_year and end_year:
+            search_query = f"{query.strip()} year:{start_year}-{end_year}"
+        elif start_year:
+            search_query = f"{query.strip()} year:{start_year}-"
+        elif end_year:
+            search_query = f"{query.strip()} year:-{end_year}"
         
         # Try with different parameters
         alternative_params = {
             "api_key": self.api_key,
             "engine": "google_patents",
-            "q": query.strip(),
+            "q": search_query,
             "num": limit,
             "hl": "en",
             "gl": "us",

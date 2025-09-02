@@ -6,6 +6,8 @@ import { PatentDrawer } from "@/components/PatentDrawer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Lightbulb, Cpu, Zap, Leaf, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { saveService } from "@/services/saveService";
 
 interface Patent {
   title: string;
@@ -17,6 +19,12 @@ interface Patent {
   pdf: string;
 }
 
+interface Filters {
+  yearRange: [number, number];
+  selectedAssignees: string[];
+  jurisdiction: string;
+}
+
 const Search = () => {
   const [selectedPatent, setSelectedPatent] = useState<Patent | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -25,6 +33,13 @@ const Search = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentSearchQuery, setCurrentSearchQuery] = useState<string>("");
+  const [isSavingQuery, setIsSavingQuery] = useState(false);
+  const [currentFilters, setCurrentFilters] = useState<Filters>({
+    yearRange: [2020, 2024],
+    selectedAssignees: [],
+    jurisdiction: "any"
+  });
+  const { toast } = useToast();
 
   // Sort patents by publication date (most recent first)
   const sortPatentsByDate = (patents: Patent[]): Patent[] => {
@@ -42,8 +57,21 @@ const Search = () => {
     setCurrentSearchQuery(query);
 
     try {
-      console.log(`Searching for: ${query}`);
-      const response = await fetch(`/api/patents/search/serpapi?query=${encodeURIComponent(query)}&limit=10`);
+      console.log(`Searching for: ${query} with filters:`, currentFilters);
+      
+      // Build URL with query parameters
+      const params = new URLSearchParams({
+        query: query,
+        limit: '10'
+      });
+      
+      // Add year range filters if they differ from default
+      if (currentFilters.yearRange[0] !== 2020 || currentFilters.yearRange[1] !== 2024) {
+        params.append('start_year', currentFilters.yearRange[0].toString());
+        params.append('end_year', currentFilters.yearRange[1].toString());
+      }
+      
+      const response = await fetch(`/api/patents/search/serpapi?${params.toString()}`);
       
       console.log(`Response status: ${response.status}`);
       
@@ -72,6 +100,45 @@ const Search = () => {
       setError(err instanceof Error ? err.message : 'An error occurred during search');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFiltersChange = (filters: Filters) => {
+    setCurrentFilters(filters);
+    // If we have a current search query, re-run the search with new filters
+    if (currentSearchQuery.trim()) {
+      searchPatents(currentSearchQuery);
+    }
+  };
+
+  const handleSaveQuery = async () => {
+    if (!currentSearchQuery.trim()) return;
+    
+    setIsSavingQuery(true);
+    try {
+      const result = await saveService.saveQuery({ query: currentSearchQuery.trim() });
+      
+      if (result.success) {
+        toast({
+          title: "Query Saved",
+          description: `Search query "${currentSearchQuery.trim()}" has been saved to your Watchlist.`,
+        });
+      } else {
+        toast({
+          title: "Save Failed",
+          description: result.error || "Failed to save query",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to save query:', error);
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save query",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingQuery(false);
     }
   };
 
@@ -197,7 +264,7 @@ const Search = () => {
         {/* Search and filters */}
         <div className="space-y-4">
           <SearchBar onSearch={searchPatents} loading={loading} />
-          <FilterBar />
+          <FilterBar onFiltersChange={handleFiltersChange} />
         </div>
 
         {/* Results */}
@@ -214,10 +281,14 @@ const Search = () => {
                 <p className="text-sm text-muted-foreground">
                   Found {patents.length} patents (sorted by most recent)
                 </p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">Save Query</Button>
-                  <Button variant="outline" size="sm">Create Alert</Button>
-                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleSaveQuery}
+                  disabled={isSavingQuery || !currentSearchQuery.trim()}
+                >
+                  {isSavingQuery ? "Saving..." : "Save Query"}
+                </Button>
               </div>
               
               <div className="grid gap-6">

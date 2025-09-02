@@ -90,16 +90,22 @@ async def delete_patent(patent_number: str, db: AsyncSession = Depends(get_db)):
 @router.get("/patents/search/serpapi")
 async def search_patents_serpapi(
     query: str = Query(..., description="Search query"),
-    limit: int = Query(10, ge=1, le=50, description="Number of results")
+    limit: int = Query(10, ge=1, le=50, description="Number of results"),
+    start_year: Optional[int] = Query(None, ge=1900, le=2030, description="Start year for filtering"),
+    end_year: Optional[int] = Query(None, ge=1900, le=2030, description="End year for filtering")
 ):
-    """Search patents using SerpAPI"""
+    """Search patents using SerpAPI with optional year filtering"""
     try:
-        patents = await serpapi_service.search_patents(query, limit)
+        patents = await serpapi_service.search_patents(query, limit, start_year, end_year)
         return {
             "results": patents,
             "query": query,
             "count": len(patents),
-            "source": "serpapi"
+            "source": "serpapi",
+            "filters": {
+                "start_year": start_year,
+                "end_year": end_year
+            }
         }
     except HTTPException:
         # Re-raise HTTPExceptions as they already have proper status codes
