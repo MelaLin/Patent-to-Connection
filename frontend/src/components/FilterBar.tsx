@@ -1,48 +1,25 @@
 import { useState } from "react";
-import { Filter, Calendar, Building, Globe } from "lucide-react";
+import { Filter, Calendar, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface FilterBarProps {
   onFiltersChange?: (filters: {
     yearRange: [number, number];
-    selectedAssignees: string[];
     jurisdiction: string;
   }) => void;
 }
 
 export function FilterBar({ onFiltersChange }: FilterBarProps) {
   const [yearRange, setYearRange] = useState([2020, 2024]);
-  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [jurisdiction, setJurisdiction] = useState("any");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const assigneeOptions = [
-    "Apple Inc.",
-    "Samsung Electronics", 
-    "Tesla Motors",
-    "Microsoft Corp.",
-    "Google LLC",
-    "Amazon.com Inc.",
-    "Toyota Motor Corp.",
-    "IBM Corporation"
-  ];
-
-  const handleAssigneeChange = (assignee: string, checked: boolean) => {
-    if (checked) {
-      setSelectedAssignees([...selectedAssignees, assignee]);
-    } else {
-      setSelectedAssignees(selectedAssignees.filter(a => a !== assignee));
-    }
-  };
-
   const clearFilters = () => {
     setYearRange([2020, 2024]);
-    setSelectedAssignees([]);
     setJurisdiction("any");
   };
 
@@ -50,7 +27,6 @@ export function FilterBar({ onFiltersChange }: FilterBarProps) {
     if (onFiltersChange) {
       onFiltersChange({
         yearRange,
-        selectedAssignees,
         jurisdiction
       });
     }
@@ -59,7 +35,6 @@ export function FilterBar({ onFiltersChange }: FilterBarProps) {
 
   const activeFilterCount = 
     (yearRange[0] !== 2020 || yearRange[1] !== 2024 ? 1 : 0) +
-    selectedAssignees.length +
     (jurisdiction !== "any" ? 1 : 0);
 
   return (
@@ -103,33 +78,6 @@ export function FilterBar({ onFiltersChange }: FilterBarProps) {
                   </div>
                 </div>
 
-                {/* Assignee Filter */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-muted-foreground" />
-                    <label className="text-sm font-medium">Assignees</label>
-                  </div>
-                  <div className="max-h-32 overflow-y-auto space-y-2">
-                    {assigneeOptions.map((assignee) => (
-                      <div key={assignee} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={assignee}
-                          checked={selectedAssignees.includes(assignee)}
-                          onCheckedChange={(checked) => 
-                            handleAssigneeChange(assignee, checked as boolean)
-                          }
-                        />
-                        <label
-                          htmlFor={assignee}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {assignee}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Jurisdiction */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -166,19 +114,6 @@ export function FilterBar({ onFiltersChange }: FilterBarProps) {
 
           {/* Active Filter Tags */}
           <div className="flex items-center gap-2">
-            {selectedAssignees.map((assignee) => (
-              <Badge key={assignee} variant="secondary" className="gap-1">
-                {assignee}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => handleAssigneeChange(assignee, false)}
-                >
-                  ×
-                </Button>
-              </Badge>
-            ))}
             {jurisdiction !== "any" && (
               <Badge variant="secondary" className="gap-1">
                 {jurisdiction}

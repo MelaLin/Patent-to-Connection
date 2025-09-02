@@ -29,7 +29,6 @@ interface Patent {
 
 interface Filters {
   yearRange: [number, number];
-  selectedAssignees: string[];
   jurisdiction: string;
 }
 
@@ -46,7 +45,6 @@ const Search = () => {
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const [currentFilters, setCurrentFilters] = useState<Filters>({
     yearRange: [2020, 2024],
-    selectedAssignees: [],
     jurisdiction: "any"
   });
   const { toast } = useToast();
@@ -92,7 +90,12 @@ const Search = () => {
         params.append('end_year', currentFilters.yearRange[1].toString());
       }
       
-              const response = await fetch(`https://patent-forge-backend.onrender.com/api/patents/search/serpapi?${params.toString()}`);
+      // Add jurisdiction filter if not "any"
+      if (currentFilters.jurisdiction !== "any") {
+        params.append('jurisdiction', currentFilters.jurisdiction);
+      }
+      
+      const response = await fetch(`https://patent-forge-backend.onrender.com/api/patents/search/serpapi?${params.toString()}`);
       
       console.log(`Response status: ${response.status}`);
       
@@ -118,7 +121,7 @@ const Search = () => {
         }
         
         // Check if there are more results
-        setHasMoreResults(sortedPatents.length === 10);
+        setHasMoreResults(sortedPatents.length === 10 && data.total > offset + sortedPatents.length);
         
         console.log(`Found ${sortedPatents.length} patents, sorted by date`);
       } else {

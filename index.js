@@ -448,7 +448,7 @@ app.get('/api/debug/serpapi', (req, res) => {
 // Search patents endpoint using real SerpAPI
 app.get('/api/patents/search/serpapi', async (req, res) => {
   try {
-    const { query, limit = '10', start_year, end_year, offset = '0' } = req.query;
+    const { query, limit = '10', start_year, end_year, offset = '0', jurisdiction } = req.query;
     
     if (!SERPAPI_KEY || SERPAPI_KEY === 'your_serpapi_key_here') {
       // Provide realistic fallback data for testing
@@ -501,8 +501,15 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       // Filter by year range if provided
       let filteredPatents = fallbackPatents;
       if (start_year && end_year) {
-        filteredPatents = fallbackPatents.filter(patent => 
+        filteredPatents = filteredPatents.filter(patent => 
           patent.year >= parseInt(start_year) && patent.year <= parseInt(end_year)
+        );
+      }
+
+      // Filter by jurisdiction if provided
+      if (jurisdiction && jurisdiction !== 'any') {
+        filteredPatents = filteredPatents.filter(patent => 
+          patent.jurisdiction === jurisdiction
         );
       }
 
@@ -623,6 +630,13 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
     if (start_year && end_year) {
       filteredPatents = patents.filter(patent => 
         patent.year && patent.year >= parseInt(start_year) && patent.year <= parseInt(end_year)
+      );
+    }
+
+    // Filter by jurisdiction if provided
+    if (jurisdiction && jurisdiction !== 'any') {
+      filteredPatents = filteredPatents.filter(patent => 
+        patent.jurisdiction === jurisdiction
       );
     }
 
