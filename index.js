@@ -539,7 +539,11 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
     // Call SerpAPI
     const serpResponse = await axios.get(SERPAPI_BASE_URL, { params: serpApiParams });
     
-    if (!serpResponse.data || !serpResponse.data.patents_results) {
+    console.log('SerpAPI response keys:', Object.keys(serpResponse.data || {}));
+    console.log('SerpAPI has organic_results:', !!(serpResponse.data && serpResponse.data.organic_results));
+    console.log('SerpAPI organic_results length:', serpResponse.data?.organic_results?.length || 0);
+    
+    if (!serpResponse.data || !serpResponse.data.organic_results) {
       console.log('SerpAPI response:', serpResponse.data);
       return res.json({
         results: [],
@@ -551,11 +555,16 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
     }
 
     // Transform SerpAPI response to our format
-    const patents = serpResponse.data.patents_results.map(patent => {
-      // Extract patent ID from the patent number or link
-      let patentId = patent.patent_number || patent.patent_id;
+    const patents = serpResponse.data.organic_results.map(patent => {
+      // Extract patent ID from the patent_id field (e.g., "patent/US11622404B2/en")
+      let patentId = patent.patent_id;
       
-      // If no patent number, try to extract from the link
+      // Clean up the patent ID by removing "patent/" prefix and "/en" suffix
+      if (patentId && patentId.startsWith('patent/')) {
+        patentId = patentId.replace('patent/', '').replace('/en', '');
+      }
+      
+      // If no patent_id, try to extract from the link
       if (!patentId && patent.patent_link) {
         const match = patent.patent_link.match(/\/patent\/([^\/]+)/);
         patentId = match ? match[1] : null;
@@ -590,6 +599,9 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
         else if (patentId.startsWith('JP')) jurisdiction = 'JP';
         else if (patentId.startsWith('CN')) jurisdiction = 'CN';
         else if (patentId.startsWith('US')) jurisdiction = 'US';
+        else if (patentId.startsWith('MX')) jurisdiction = 'MX';
+        else if (patentId.startsWith('IL')) jurisdiction = 'IL';
+        else if (patentId.startsWith('GB')) jurisdiction = 'GB';
       }
 
       return {
@@ -600,9 +612,9 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
         inventors: inventors,
         year: year,
         jurisdiction: jurisdiction,
-        google_patents_url: patentId ? `https://patents.google.com/patent/${patentId}` : null,
+        google_patents_url: patent.patent_link || (patentId ? `https://patents.google.com/patent/${patentId}` : null),
         publication_date: patent.publication_date,
-        patent_link: patent.patent_link
+        filing_date: patent.filing_date
       };
     });
 
