@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real SerpAPI Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .patent-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .patent-title {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        .patent-id {
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .google-patents-link {
+            color: #28a745;
+            text-decoration: none;
+        }
+        .google-patents-link:hover {
+            text-decoration: underline;
+        }
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .links a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .links a:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Real SerpAPI Integration Test - Hydroponics Search</h1>
+    <p>This page tests the real SerpAPI integration with hydroponics search results.</p>
+
+    <div class="container">
+        <h2>🧪 Backend API Test</h2>
+        
+        <div class="test-section">
+            <h3>1. Hydroponics Search Test</h3>
+            <p>Testing the search endpoint with "hydroponics" query</p>
+            <button onclick="testHydroponicsSearch()">Test Hydroponics Search</button>
+            <div id="search-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Patent Data Validation</h3>
+            <p>Validating that returned patents have correct structure and real patent IDs</p>
+            <button onclick="validatePatentData()">Validate Patent Data</button>
+            <div id="validation-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Google Patents URL Generation</h3>
+            <p>Testing that Google Patents URLs are correctly generated from patent IDs</p>
+            <button onclick="testGooglePatentsUrls()">Test Google Patents URLs</button>
+            <div id="url-result" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📋 Patent Results Display</h2>
+        <div id="patents-display" class="test-section info">
+            <p>Click "Test Hydroponics Search" above to see the patent results here.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔗 Frontend Integration</h2>
+        <div class="test-section">
+            <h3>4. Frontend-Backend Communication</h3>
+            <p>Testing that the frontend can properly communicate with the updated backend</p>
+            <button onclick="testFrontendIntegration()">Test Frontend Integration</button>
+            <div id="frontend-result" class="result"></div>
+        </div>
+    </div>
+
+    <div class="links">
+        <a href="http://localhost:8081" target="_blank">Open Frontend App</a>
+        <a href="http://localhost:8081/#/search" target="_blank">Open Search Page</a>
+        <a href="http://localhost:3001/api/health" target="_blank">Backend Health Check</a>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+        let searchResults = null;
+
+        function displayResult(elementId, data, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${isSuccess ? 'success' : 'error'}`;
+            element.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        function displayPatents(patents) {
+            const container = document.getElementById('patents-display');
+            if (!patents || patents.length === 0) {
+                container.innerHTML = '<p>No patents found</p>';
+                return;
+            }
+
+            let html = '<h3>Found Patents:</h3>';
+            patents.forEach((patent, index) => {
+                html += `
+                    <div class="patent-card">
+                        <div class="patent-title">${patent.title}</div>
+                        <div><span class="patent-id">${patent.patent_id}</span> | ${patent.jurisdiction} | ${patent.year || 'Unknown Year'}</div>
+                        <div><strong>Assignee:</strong> ${patent.assignee}</div>
+                        <div><strong>Inventors:</strong> ${patent.inventors.map(inv => inv.name).join(', ')}</div>
+                        <div><strong>Abstract:</strong> ${patent.abstract}</div>
+                        <div><strong>Google Patents:</strong> 
+                            <a href="${patent.google_patents_url}" target="_blank" class="google-patents-link">
+                                ${patent.google_patents_url}
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        async function testHydroponicsSearch() {
+            try {
+                const response = await fetch(`${API_BASE}/patents/search/serpapi?query=hydroponics&limit=5`);
+                const data = await response.json();
+                
+                const success = response.ok && data.results && data.results.length > 0;
+                displayResult('search-result', data, success);
+                
+                if (success) {
+                    searchResults = data.results;
+                    displayPatents(data.results);
+                }
+            } catch (error) {
+                displayResult('search-result', { error: error.message }, false);
+            }
+        }
+
+        function validatePatentData() {
+            if (!searchResults) {
+                displayResult('validation-result', { error: 'No search results available. Run the search test first.' }, false);
+                return;
+            }
+
+            const validations = searchResults.map(patent => {
+                const validation = {
+                    patent_id: patent.patent_id,
+                    hasValidId: patent.patent_id && patent.patent_id.length > 0,
+                    hasTitle: !!patent.title,
+                    hasAbstract: !!patent.abstract,
+                    hasInventors: Array.isArray(patent.inventors) && patent.inventors.length > 0,
+                    hasAssignee: !!patent.assignee,
+                    hasYear: !!patent.year,
+                    hasGooglePatentsUrl: !!patent.google_patents_url,
+                    googlePatentsUrlValid: patent.google_patents_url && patent.google_patents_url.startsWith('https://patents.google.com/patent/'),
+                    allFieldsValid: false
+                };
+                
+                validation.allFieldsValid = validation.hasValidId && validation.hasTitle && 
+                                           validation.hasAbstract && validation.hasInventors && 
+                                           validation.hasAssignee && validation.hasGooglePatentsUrl;
+                
+                return validation;
+            });
+
+            const allValid = validations.every(v => v.allFieldsValid);
+            const summary = {
+                totalPatents: searchResults.length,
+                validPatents: validations.filter(v => v.allFieldsValid).length,
+                invalidPatents: validations.filter(v => !v.allFieldsValid).length,
+                validations: validations
+            };
+
+            displayResult('validation-result', summary, allValid);
+        }
+
+        function testGooglePatentsUrls() {
+            if (!searchResults) {
+                displayResult('url-result', { error: 'No search results available. Run the search test first.' }, false);
+                return;
+            }
+
+            const urlTests = searchResults.map(patent => {
+                const expectedUrl = `https://patents.google.com/patent/${patent.patent_id}`;
+                const isCorrect = patent.google_patents_url === expectedUrl;
+                
+                return {
+                    patent_id: patent.patent_id,
+                    expected_url: expectedUrl,
+                    actual_url: patent.google_patents_url,
+                    is_correct: isCorrect
+                };
+            });
+
+            const allCorrect = urlTests.every(test => test.is_correct);
+            const summary = {
+                totalUrls: urlTests.length,
+                correctUrls: urlTests.filter(test => test.is_correct).length,
+                incorrectUrls: urlTests.filter(test => !test.is_correct).length,
+                urlTests: urlTests
+            };
+
+            displayResult('url-result', summary, allCorrect);
+        }
+
+        async function testFrontendIntegration() {
+            try {
+                // Test that frontend can access the backend
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                const success = response.ok && data.status === 'healthy';
+                displayResult('frontend-result', {
+                    backendHealth: data,
+                    frontendCanAccessBackend: success,
+                    message: success ? 'Frontend can successfully communicate with backend!' : 'Frontend cannot access backend'
+                }, success);
+            } catch (error) {
+                displayResult('frontend-result', { 
+                    error: error.message,
+                    frontendCanAccessBackend: false,
+                    message: 'Frontend cannot access backend - check if backend is running on port 3001'
+                }, false);
+            }
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testFrontendIntegration();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

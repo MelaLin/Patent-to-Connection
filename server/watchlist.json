@@ -86,6 +86,26 @@
       "inventors": [],
       "saved_at": "2025-09-02T20:58:09.577Z",
       "user_id": "dev"
+    },
+    {
+      "id": "1756851617886",
+      "title": "Advanced Solar Panel Technology",
+      "abstract": "A revolutionary solar panel design with improved efficiency and durability for renewable energy applications.",
+      "assignee": "SolarTech Inc",
+      "inventors": [
+        {
+          "name": "Dr. Sarah Johnson",
+          "linkedin_url": "https://linkedin.com/in/sarahjohnson"
+        },
+        {
+          "name": "Michael Chen",
+          "linkedin_url": "https://linkedin.com/in/michaelchen"
+        }
+      ],
+      "link": "https://patents.google.com/patent/US1234567",
+      "date_filed": "2024-01-01T08:00:00.000Z",
+      "saved_at": "2025-09-02T22:20:17.887Z",
+      "user_id": "dev"
     }
   ],
   "queries": [
@@ -129,6 +149,17 @@
       },
       "created_at": "2025-09-02T20:58:13.892Z",
       "user_id": "dev"
+    },
+    {
+      "id": "1756851619466",
+      "query": "hydroponics",
+      "filters": {
+        "yearFrom": 2020,
+        "yearTo": 2024,
+        "jurisdiction": "any"
+      },
+      "created_at": "2025-09-02T22:20:19.466Z",
+      "user_id": "dev"
     }
   ],
   "inventors": [
@@ -169,6 +200,14 @@
       "name": "Test Inventor",
       "affiliation": "Test Company",
       "created_at": "2025-09-02T20:58:05.306Z",
+      "user_id": "dev"
+    },
+    {
+      "id": "1756851616608",
+      "name": "Michael Chen",
+      "linkedin_url": "https://linkedin.com/in/michaelchen",
+      "associated_patent_id": "US1234567",
+      "created_at": "2025-09-02T22:20:16.608Z",
       "user_id": "dev"
     }
   ]

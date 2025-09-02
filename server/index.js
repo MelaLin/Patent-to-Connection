@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
+const axios = require('axios');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,6 +14,10 @@ app.use(express.json());
 
 // Data file path
 const WATCHLIST_FILE = path.join(__dirname, 'watchlist.json');
+
+// SerpAPI configuration
+const SERPAPI_KEY = process.env.SERPAPI_KEY;
+const SERPAPI_BASE_URL = 'https://serpapi.com/search.json';
 
 // Initialize watchlist.json if it doesn't exist
 async function initializeWatchlistFile() {
@@ -367,155 +373,172 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-// Search patents endpoint (mock data for now)
+// Search patents endpoint using real SerpAPI
 app.get('/api/patents/search/serpapi', async (req, res) => {
   try {
     const { query, limit = '10', start_year, end_year, offset = '0' } = req.query;
     
-    // Mock patent data - in a real app, this would call SerpAPI
-    const mockPatents = [
-      {
-        patent_id: 'US1234567',
-        title: 'Advanced Solar Panel Technology',
-        abstract: 'A revolutionary solar panel design with improved efficiency and durability for renewable energy applications.',
-        assignee: 'SolarTech Inc',
-        inventors: [
-          { name: 'Dr. Sarah Johnson', linkedin_url: 'https://linkedin.com/in/sarahjohnson' },
-          { name: 'Michael Chen', linkedin_url: 'https://linkedin.com/in/michaelchen' }
-        ],
-        year: 2024,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US1234567',
-        publication_date: '2024-06-15'
-      },
-      {
-        patent_id: 'US2345678',
-        title: 'Machine Learning Patent Analysis System',
-        abstract: 'An AI-powered system for analyzing patent documents and extracting key insights for competitive intelligence.',
-        assignee: 'TechCorp Inc',
-        inventors: [
-          { name: 'Dr. Alex Chen', linkedin_url: 'https://linkedin.com/in/alexchen' }
-        ],
-        year: 2024,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US2345678',
-        publication_date: '2024-05-20'
-      },
-      {
-        patent_id: 'US3456789',
-        title: 'Quantum Computing Optimization Method',
-        abstract: 'A novel approach to optimizing quantum computing algorithms for faster processing and improved accuracy.',
-        assignee: 'Quantum Solutions Ltd',
-        inventors: [
-          { name: 'Dr. Emily Rodriguez', linkedin_url: 'https://linkedin.com/in/emilyrodriguez' },
-          { name: 'David Kim', linkedin_url: 'https://linkedin.com/in/davidkim' }
-        ],
-        year: 2023,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US3456789',
-        publication_date: '2023-12-10'
-      },
-      {
-        patent_id: 'US4567890',
-        title: 'Blockchain-Based Patent Registry',
-        abstract: 'A decentralized system for registering and verifying patent ownership using blockchain technology.',
-        assignee: 'Blockchain Innovations',
-        inventors: [
-          { name: 'Dr. James Wilson', linkedin_url: 'https://linkedin.com/in/jameswilson' }
-        ],
-        year: 2023,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US4567890',
-        publication_date: '2023-11-05'
-      },
-      {
-        patent_id: 'US5678901',
-        title: 'Autonomous Vehicle Navigation System',
-        abstract: 'An advanced navigation system for autonomous vehicles with real-time obstacle detection and path planning.',
-        assignee: 'AutoDrive Technologies',
-        inventors: [
-          { name: 'Dr. Lisa Thompson', linkedin_url: 'https://linkedin.com/in/lisathompson' },
-          { name: 'Robert Garcia', linkedin_url: 'https://linkedin.com/in/robertgarcia' }
-        ],
-        year: 2024,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US5678901',
-        publication_date: '2024-04-12'
-      },
-      {
-        patent_id: 'US6789012',
-        title: 'Biometric Authentication Method',
-        abstract: 'A secure biometric authentication system using multiple biometric factors for enhanced security.',
-        assignee: 'SecureTech Solutions',
-        inventors: [
-          { name: 'Dr. Maria Santos', linkedin_url: 'https://linkedin.com/in/mariasantos' }
-        ],
-        year: 2024,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US6789012',
-        publication_date: '2024-03-18'
-      },
-      {
-        patent_id: 'US7890123',
-        title: 'Smart Grid Energy Management',
-        abstract: 'An intelligent energy management system for smart grids with real-time monitoring and optimization.',
-        assignee: 'EnergyGrid Corp',
-        inventors: [
-          { name: 'Dr. Thomas Anderson', linkedin_url: 'https://linkedin.com/in/thomasanderson' },
-          { name: 'Jennifer Lee', linkedin_url: 'https://linkedin.com/in/jenniferlee' }
-        ],
-        year: 2023,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US7890123',
-        publication_date: '2023-10-25'
-      },
-      {
-        patent_id: 'US8901234',
-        title: '3D Printing Material Innovation',
-        abstract: 'A new composite material for 3D printing with enhanced strength and flexibility properties.',
-        assignee: 'PrintTech Industries',
-        inventors: [
-          { name: 'Dr. Kevin Park', linkedin_url: 'https://linkedin.com/in/kevinpark' }
-        ],
-        year: 2024,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US8901234',
-        publication_date: '2024-02-14'
-      },
-      {
-        patent_id: 'US9012345',
-        title: 'Augmented Reality Display Technology',
-        abstract: 'An advanced AR display system with improved field of view and reduced latency.',
-        assignee: 'AR Vision Labs',
-        inventors: [
-          { name: 'Dr. Rachel Green', linkedin_url: 'https://linkedin.com/in/rachelgreen' },
-          { name: 'Christopher Brown', linkedin_url: 'https://linkedin.com/in/christopherbrown' }
-        ],
-        year: 2024,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US9012345',
-        publication_date: '2024-01-30'
-      },
-      {
-        patent_id: 'US0123456',
-        title: 'IoT Device Security Protocol',
-        abstract: 'A comprehensive security protocol for IoT devices with encryption and authentication.',
-        assignee: 'IoT Security Inc',
-        inventors: [
-          { name: 'Dr. Amanda White', linkedin_url: 'https://linkedin.com/in/amandawhite' }
-        ],
-        year: 2023,
-        jurisdiction: 'US',
-        google_patents_url: 'https://patents.google.com/patent/US0123456',
-        publication_date: '2023-09-15'
-      }
-    ];
+    if (!SERPAPI_KEY || SERPAPI_KEY === 'your_serpapi_key_here') {
+      // Provide realistic fallback data for testing
+      console.log('SerpAPI key not configured, using fallback data for testing');
+      
+      const fallbackPatents = [
+        {
+          patent_id: 'US10123456B2',
+          title: 'Hydroponic Growing System with Automated Nutrient Delivery',
+          abstract: 'A hydroponic growing system that includes an automated nutrient delivery system for optimal plant growth in controlled environments.',
+          assignee: 'GreenTech Solutions Inc',
+          inventors: [
+            { name: 'Dr. Sarah Johnson' },
+            { name: 'Michael Chen' }
+          ],
+          year: 2023,
+          jurisdiction: 'US',
+          google_patents_url: 'https://patents.google.com/patent/US10123456B2',
+          publication_date: '2023-06-15'
+        },
+        {
+          patent_id: 'US9876543A1',
+          title: 'Vertical Hydroponic Farming Apparatus',
+          abstract: 'An apparatus for vertical hydroponic farming that maximizes space utilization while maintaining optimal growing conditions.',
+          assignee: 'Urban Farm Technologies',
+          inventors: [
+            { name: 'Dr. Alex Rodriguez' }
+          ],
+          year: 2022,
+          jurisdiction: 'US',
+          google_patents_url: 'https://patents.google.com/patent/US9876543A1',
+          publication_date: '2022-11-20'
+        },
+        {
+          patent_id: 'US8765432B1',
+          title: 'Smart Hydroponic Monitoring System',
+          abstract: 'A monitoring system for hydroponic environments that tracks pH, temperature, and nutrient levels for automated adjustments.',
+          assignee: 'SmartGrow Systems',
+          inventors: [
+            { name: 'Dr. Emily Davis' },
+            { name: 'Robert Wilson' }
+          ],
+          year: 2024,
+          jurisdiction: 'US',
+          google_patents_url: 'https://patents.google.com/patent/US8765432B1',
+          publication_date: '2024-03-10'
+        }
+      ];
 
-    // Filter by year range if provided
-    let filteredPatents = mockPatents;
+      // Filter by year range if provided
+      let filteredPatents = fallbackPatents;
+      if (start_year && end_year) {
+        filteredPatents = fallbackPatents.filter(patent => 
+          patent.year >= parseInt(start_year) && patent.year <= parseInt(end_year)
+        );
+      }
+
+      // Apply offset and limit
+      const startIndex = parseInt(offset);
+      const limitedPatents = filteredPatents.slice(startIndex, startIndex + parseInt(limit));
+
+      return res.json({
+        results: limitedPatents,
+        total: filteredPatents.length,
+        query: query,
+        limit: parseInt(limit),
+        message: 'Using fallback data - set SERPAPI_KEY for real results'
+      });
+    }
+
+    // Build SerpAPI parameters
+    const serpApiParams = {
+      api_key: SERPAPI_KEY,
+      engine: 'google_patents',
+      q: query,
+      num: Math.min(parseInt(limit), 100), // SerpAPI max is 100
+      start: parseInt(offset)
+    };
+
+    // Add date filters if provided
     if (start_year && end_year) {
-      filteredPatents = mockPatents.filter(patent => 
-        patent.year >= parseInt(start_year) && patent.year <= parseInt(end_year)
+      serpApiParams.as_ylo = start_year;
+      serpApiParams.as_yhi = end_year;
+    }
+
+    console.log('Calling SerpAPI with params:', { ...serpApiParams, api_key: '[HIDDEN]' });
+
+    // Call SerpAPI
+    const serpResponse = await axios.get(SERPAPI_BASE_URL, { params: serpApiParams });
+    
+    if (!serpResponse.data || !serpResponse.data.patents_results) {
+      console.log('SerpAPI response:', serpResponse.data);
+      return res.json({
+        results: [],
+        total: 0,
+        query: query,
+        limit: parseInt(limit),
+        message: 'No patents found'
+      });
+    }
+
+    // Transform SerpAPI response to our format
+    const patents = serpResponse.data.patents_results.map(patent => {
+      // Extract patent ID from the patent number or link
+      let patentId = patent.patent_number || patent.patent_id;
+      
+      // If no patent number, try to extract from the link
+      if (!patentId && patent.patent_link) {
+        const match = patent.patent_link.match(/\/patent\/([^\/]+)/);
+        patentId = match ? match[1] : null;
+      }
+
+      // Parse inventors from the inventor field
+      let inventors = [];
+      if (patent.inventor) {
+        // Split by common separators and clean up
+        const inventorNames = patent.inventor
+          .split(/[,;]/)
+          .map(name => name.trim())
+          .filter(name => name.length > 0);
+        
+        inventors = inventorNames.map(name => ({ name }));
+      }
+
+      // Extract year from publication date
+      let year = null;
+      if (patent.publication_date) {
+        const date = new Date(patent.publication_date);
+        if (!isNaN(date.getTime())) {
+          year = date.getFullYear();
+        }
+      }
+
+      // Determine jurisdiction from patent number
+      let jurisdiction = 'US';
+      if (patentId) {
+        if (patentId.startsWith('EP')) jurisdiction = 'EP';
+        else if (patentId.startsWith('WO')) jurisdiction = 'WO';
+        else if (patentId.startsWith('JP')) jurisdiction = 'JP';
+        else if (patentId.startsWith('CN')) jurisdiction = 'CN';
+        else if (patentId.startsWith('US')) jurisdiction = 'US';
+      }
+
+      return {
+        patent_id: patentId,
+        title: patent.title || 'Untitled Patent',
+        abstract: patent.snippet || patent.abstract || 'No abstract available',
+        assignee: patent.assignee || 'Unknown Assignee',
+        inventors: inventors,
+        year: year,
+        jurisdiction: jurisdiction,
+        google_patents_url: patentId ? `https://patents.google.com/patent/${patentId}` : null,
+        publication_date: patent.publication_date,
+        patent_link: patent.patent_link
+      };
+    });
+
+    // Filter by year range if provided (client-side filtering)
+    let filteredPatents = patents;
+    if (start_year && end_year) {
+      filteredPatents = patents.filter(patent => 
+        patent.year && patent.year >= parseInt(start_year) && patent.year <= parseInt(end_year)
       );
     }
 
@@ -523,17 +546,34 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
     const startIndex = parseInt(offset);
     const limitedPatents = filteredPatents.slice(startIndex, startIndex + parseInt(limit));
 
+    console.log(`Found ${patents.length} patents, returning ${limitedPatents.length} after filtering`);
+
     res.json({
       results: limitedPatents,
       total: filteredPatents.length,
       query: query,
-      limit: parseInt(limit)
+      limit: parseInt(limit),
+      serpapi_info: {
+        total_results: serpResponse.data.search_information?.total_results,
+        time_taken: serpResponse.data.search_information?.time_taken_displayed
+      }
     });
   } catch (error) {
-    console.error('Search error:', error);
+    console.error('SerpAPI search error:', error.response?.data || error.message);
+    
+    // If it's a SerpAPI error, return a helpful message
+    if (error.response?.data?.error) {
+      return res.status(400).json({
+        success: false,
+        error: `SerpAPI Error: ${error.response.data.error}`,
+        details: error.response.data
+      });
+    }
+    
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to search patents' 
+      error: 'Failed to search patents',
+      details: error.message
     });
   }
 });
