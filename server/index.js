@@ -370,7 +370,28 @@ app.post('/api/watchlist/queries', async (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    serpapi_configured: !!(SERPAPI_KEY && SERPAPI_KEY !== 'your_serpapi_key_here'),
+    serpapi_key_length: SERPAPI_KEY ? SERPAPI_KEY.length : 0,
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Debug endpoint for SerpAPI configuration
+app.get('/api/debug/serpapi', (req, res) => {
+  res.json({
+    serpapi_key_exists: !!SERPAPI_KEY,
+    serpapi_key_is_placeholder: SERPAPI_KEY === 'your_serpapi_key_here',
+    serpapi_key_length: SERPAPI_KEY ? SERPAPI_KEY.length : 0,
+    serpapi_key_preview: SERPAPI_KEY ? `${SERPAPI_KEY.substring(0, 4)}...${SERPAPI_KEY.substring(SERPAPI_KEY.length - 4)}` : 'none',
+    environment_variables: {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT: process.env.PORT,
+      SERPAPI_KEY_SET: !!process.env.SERPAPI_KEY
+    }
+  });
 });
 
 // Search patents endpoint using real SerpAPI
@@ -559,21 +580,51 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('SerpAPI search error:', error.response?.data || error.message);
+    console.error('SerpAPI search error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      config: error.config
+    });
     
     // If it's a SerpAPI error, return a helpful message
     if (error.response?.data?.error) {
       return res.status(400).json({
         success: false,
         error: `SerpAPI Error: ${error.response.data.error}`,
+        details: error.response.data,
+        status: error.response.status
+      });
+    }
+    
+    // If it's a network error
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      return res.status(500).json({
+        success: false,
+        error: 'Network error connecting to SerpAPI',
+        details: error.message,
+        code: error.code
+      });
+    }
+    
+    // If it's an authentication error
+    if (error.response?.status === 401) {
+      return res.status(401).json({
+        success: false,
+        error: 'SerpAPI authentication failed - check your API key',
         details: error.response.data
       });
     }
     
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to search patents',
-      details: error.message
+      error: 'Search failed: ' + error.message,
+      details: {
+        message: error.message,
+        status: error.response?.status,
+        code: error.code
+      }
     });
   }
 });
