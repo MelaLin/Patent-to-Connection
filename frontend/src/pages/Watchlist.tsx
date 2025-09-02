@@ -31,7 +31,9 @@ const Watchlist = () => {
   const loadWatchlist = async () => {
     try {
       setLoading(true);
+      console.log('Loading watchlist...');
       const data = await saveService.getWatchlist();
+      console.log('Watchlist data received:', data);
       setWatchlistData(data);
     } catch (error) {
       console.error('Failed to load watchlist:', error);
@@ -199,6 +201,17 @@ const Watchlist = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
+      {/* Debug Info */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <h3 className="font-semibold text-yellow-800">Debug Info:</h3>
+        <p className="text-sm text-yellow-700">
+          Loading: {loading.toString()}<br/>
+          Patents: {watchlistData.patents.length}<br/>
+          Queries: {watchlistData.queries.length}<br/>
+          Inventors: {watchlistData.inventors.length}
+        </p>
+      </div>
+      
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Watchlist</h1>

@@ -121,7 +121,9 @@ const Search = () => {
         }
         
         // Check if there are more results
-        setHasMoreResults(sortedPatents.length === 10 && data.total > offset + sortedPatents.length);
+        const hasMore = sortedPatents.length === 10 && data.total > offset + sortedPatents.length;
+        setHasMoreResults(hasMore);
+        console.log(`Pagination debug: ${sortedPatents.length} results, total: ${data.total}, offset: ${offset}, hasMore: ${hasMore}`);
         
         console.log(`Found ${sortedPatents.length} patents, sorted by date`);
       } else {
@@ -391,6 +393,10 @@ const Search = () => {
                   </Button>
                 </div>
               )}
+              {/* Debug info */}
+              <div className="text-xs text-muted-foreground text-center">
+                Debug: hasMoreResults={hasMoreResults.toString()}, patents.length={patents.length}, loading={loading.toString()}
+              </div>
             </>
           )}
         </div>
