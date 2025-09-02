@@ -108,10 +108,10 @@
     <p>This page tests your Render deployment with the real SerpAPI key you've configured.</p>
 
     <div class="url-input-section">
-        <h2>🔗 Enter Your Render URL</h2>
-        <p><strong>Step 1:</strong> Enter your Render app URL below (e.g., https://your-app-name.onrender.com)</p>
-        <input type="url" id="renderUrl" placeholder="https://your-app-name.onrender.com" />
-        <button onclick="setRenderUrl()">Set Render URL</button>
+        <h2>✅ Backend Successfully Deployed!</h2>
+        <p><strong>Your backend is running at:</strong> <code>https://patent-forge-backend.onrender.com</code></p>
+        <p><strong>Status:</strong> <span style="color: green;">🟢 Healthy</span> | <strong>SerpAPI Key:</strong> <span style="color: green;">🟢 Configured</span></p>
+        <button onclick="testBackendHealth()">Test Backend Health</button>
         <div id="urlStatus"></div>
     </div>
 
@@ -171,51 +171,40 @@
 
     <div class="links">
         <a href="http://localhost:8081" target="_blank">Local Frontend</a>
-        <a href="#" id="renderFrontendLink" target="_blank">Render Frontend</a>
+        <a href="https://patent-forge-backend.onrender.com/api/health" target="_blank">Backend Health</a>
         <a href="http://localhost:3001/api/health" target="_blank">Local Backend Health</a>
     </div>
 
     <script>
         const LOCAL_API = 'http://localhost:3001/api';
-        let RENDER_API = null;
+        const RENDER_API = 'https://patent-forge-backend.onrender.com/api';
 
-        function setRenderUrl() {
-            const urlInput = document.getElementById('renderUrl');
-            const url = urlInput.value.trim();
-            
-            if (!url) {
-                document.getElementById('urlStatus').innerHTML = '<p style="color: red;">Please enter a valid URL</p>';
-                return;
-            }
-
-            // Validate URL format
-            try {
-                const urlObj = new URL(url);
-                if (!urlObj.hostname.includes('onrender.com')) {
-                    document.getElementById('urlStatus').innerHTML = '<p style="color: orange;">Warning: URL doesn\'t appear to be a Render URL</p>';
-                }
-            } catch (e) {
-                document.getElementById('urlStatus').innerHTML = '<p style="color: red;">Invalid URL format</p>';
-                return;
-            }
-
-            // Set the API URL
-            RENDER_API = url.endsWith('/') ? url + 'api' : url + '/api';
-            
-            // Update status and enable buttons
-            document.getElementById('urlStatus').innerHTML = `
-                <p style="color: green;">✅ Render URL set: ${RENDER_API}</p>
-                <p><strong>Next:</strong> Click "Test Render API" to verify your deployment</p>
-            `;
-            
-            // Enable buttons
+        // Enable all test buttons since we have the URL
+        document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('testRenderBtn').disabled = false;
             document.getElementById('validateBtn').disabled = false;
             document.getElementById('debugBtn').disabled = false;
-            
-            // Update render frontend link
-            document.getElementById('renderFrontendLink').href = url;
-            document.getElementById('renderFrontendLink').textContent = 'Render Frontend';
+        });
+
+        function testBackendHealth() {
+            fetch(`${RENDER_API}/health`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('urlStatus').innerHTML = `
+                        <div style="background-color: #d4edda; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                            <h4>✅ Backend Health Check</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('urlStatus').innerHTML = `
+                        <div style="background-color: #f8d7da; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                            <h4>❌ Backend Health Check Failed</h4>
+                            <p>Error: ${error.message}</p>
+                        </div>
+                    `;
+                });
         }
 
         function displayResult(elementId, data, isSuccess = true) {
