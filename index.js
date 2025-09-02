@@ -784,6 +784,42 @@ app.delete('/api/watchlist/inventors/:id', async (req, res) => {
   }
 });
 
+// Test file operations
+app.get('/api/test-file-ops', async (req, res) => {
+  try {
+    console.log('Testing file operations...');
+    console.log('WATCHLIST_FILE path:', WATCHLIST_FILE);
+    
+    // Test reading
+    const readResult = await readWatchlistData();
+    console.log('Read result:', readResult);
+    
+    // Test writing
+    const testData = { ...readResult, test: new Date().toISOString() };
+    const writeResult = await writeWatchlistData(testData);
+    console.log('Write result:', writeResult);
+    
+    // Test reading again
+    const readResult2 = await readWatchlistData();
+    console.log('Read result 2:', readResult2);
+    
+    res.json({
+      success: true,
+      readResult: readResult,
+      writeResult: writeResult,
+      readResult2: readResult2,
+      filePath: WATCHLIST_FILE
+    });
+  } catch (error) {
+    console.error('File operation test error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Initialize the watchlist file on startup
 initializeWatchlistFile().then(() => {
   app.listen(PORT, () => {
