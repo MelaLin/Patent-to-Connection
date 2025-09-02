@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Patent Forge API Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Save Patent</h2>
+        <button onclick="testSavePatent()">Save Patent</button>
+        <div id="savePatentResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Save Query</h2>
+        <button onclick="testSaveQuery()">Save Query</button>
+        <div id="saveQueryResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Get Watchlist</h2>
+        <button onclick="testGetWatchlist()">Get Watchlist</button>
+        <div id="getWatchlistResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        
+        async function testSavePatent() {
+            const resultDiv = document.getElementById('savePatentResult');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/watchlist/patents`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        patentNumber: 'US' + Date.now(),
+                        title: 'Test Patent ' + Date.now(),
+                        abstract: 'This is a test patent abstract',
+                        assignee: 'Test Company',
+                        inventors: ['John Doe', 'Jane Smith'],
+                        filingDate: '2024-01-01',
+                        googlePatentsLink: 'https://patents.google.com/patent/US1234567'
+                    })
+                });
+                
+                const data = await response.json();
+                resultDiv.className = 'test-section ' + (data.ok ? 'success' : 'error');
+                resultDiv.innerHTML = `
+                    <h3>${data.ok ? 'Success!' : 'Error'}</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.className = 'test-section error';
+                resultDiv.innerHTML = `
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        async function testSaveQuery() {
+            const resultDiv = document.getElementById('saveQueryResult');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/watchlist/queries`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: 'test query ' + Date.now(),
+                        filters: {
+                            yearFrom: 2020,
+                            yearTo: 2025
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                resultDiv.className = 'test-section ' + (data.ok ? 'success' : 'error');
+                resultDiv.innerHTML = `
+                    <h3>${data.ok ? 'Success!' : 'Error'}</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.className = 'test-section error';
+                resultDiv.innerHTML = `
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        async function testGetWatchlist() {
+            const resultDiv = document.getElementById('getWatchlistResult');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/watchlist`);
+                const data = await response.json();
+                resultDiv.className = 'test-section ' + (data.ok ? 'success' : 'error');
+                resultDiv.innerHTML = `
+                    <h3>${data.ok ? 'Success!' : 'Error'}</h3>
+                    <p>Found ${data.patents.length} patents and ${data.queries.length} queries</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.className = 'test-section error';
+                resultDiv.innerHTML = `
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

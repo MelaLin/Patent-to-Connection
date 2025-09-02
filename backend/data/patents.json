@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "patent_number": "US1234567",
+    "title": "Test Patent",
+    "abstract": "Test abstract",
+    "assignee": "Test Company",
+    "inventors": [
+      {
+        "name": "John Doe"
+      }
+    ],
+    "link": "https://patents.google.com/patent/US1234567",
+    "date_filed": "2024-01-01",
+    "google_patents_link": "https://patents.google.com/patent/US1234567",
+    "tags": [],
+    "user_id": "dev",
+    "created_at": "2025-09-02T10:13:35.097985",
+    "updated_at": "2025-09-02T10:13:35.098003"
+  },
+  {
+    "id": 2,
+    "patent_number": "US1234567",
+    "title": "Test Patent",
+    "abstract": "Test abstract",
+    "assignee": "Test Company",
+    "inventors": [
+      {
+        "name": "John Doe"
+      }
+    ],
+    "link": "https://patents.google.com/patent/US1234567",
+    "date_filed": "2024-01-01",
+    "google_patents_link": "https://patents.google.com/patent/US1234567",
+    "tags": [],
+    "user_id": "dev",
+    "created_at": "2025-09-02T11:45:32.164209",
+    "updated_at": "2025-09-02T11:45:32.164694"
+  },
+  {
+    "id": 3,
+    "patent_number": "US1756838839206",
+    "title": "Test Patent 1756838839206",
+    "abstract": "This is a test patent abstract",
+    "assignee": "Test Company",
+    "inventors": [
+      {
+        "name": "John Doe"
+      },
+      {
+        "name": "Jane Smith"
+      }
+    ],
+    "link": "https://patents.google.com/patent/US1234567",
+    "date_filed": "2024-01-01",
+    "google_patents_link": "https://patents.google.com/patent/US1234567",
+    "tags": [],
+    "user_id": "dev",
+    "created_at": "2025-09-02T11:47:19.230192",
+    "updated_at": "2025-09-02T11:47:19.230353"
+  }
+]

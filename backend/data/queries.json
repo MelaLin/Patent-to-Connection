@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "query": "hydroponics",
+    "filters": {
+      "yearFrom": 2020,
+      "yearTo": 2025
+    },
+    "hash": "hash_1",
+    "user_id": "dev",
+    "created_at": "2025-09-02T10:13:40.917412",
+    "updated_at": "2025-09-02T10:13:40.917466"
+  },
+  {
+    "id": 2,
+    "query": "test query 1756838841738",
+    "filters": {
+      "yearFrom": 2020,
+      "yearTo": 2025
+    },
+    "hash": "hash_2",
+    "user_id": "dev",
+    "created_at": "2025-09-02T11:47:21.750282",
+    "updated_at": "2025-09-02T11:47:21.750325"
+  }
+]
