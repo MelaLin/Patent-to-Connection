@@ -40,6 +40,8 @@ class SaveService {
 
   // Save a patent
   async savePatent(patentData: PatentSaveData): Promise<SavedPatent> {
+    console.log('Sending patent data:', patentData);
+    
     const response = await fetch(`${this.baseUrl}/patents/save`, {
       method: 'POST',
       headers: {
@@ -48,12 +50,27 @@ class SaveService {
       body: JSON.stringify(patentData),
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to save patent');
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      
+      let errorDetail = 'Failed to save patent';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.detail || errorDetail;
+      } catch (e) {
+        errorDetail = errorText || errorDetail;
+      }
+      
+      throw new Error(errorDetail);
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('Save patent result:', result);
+    return result;
   }
 
   // Get all saved patents
@@ -70,6 +87,8 @@ class SaveService {
 
   // Save an inventor
   async saveInventor(inventorData: InventorSaveData): Promise<SavedInventor> {
+    console.log('Sending inventor data:', inventorData);
+    
     const response = await fetch(`${this.baseUrl}/inventors/save`, {
       method: 'POST',
       headers: {
@@ -78,12 +97,26 @@ class SaveService {
       body: JSON.stringify(inventorData),
     });
 
+    console.log('Response status:', response.status);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to save inventor');
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      
+      let errorDetail = 'Failed to save inventor';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.detail || errorDetail;
+      } catch (e) {
+        errorDetail = errorText || errorDetail;
+      }
+      
+      throw new Error(errorDetail);
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('Save inventor result:', result);
+    return result;
   }
 
   // Get all saved inventors

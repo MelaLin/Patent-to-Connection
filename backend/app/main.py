@@ -37,6 +37,18 @@ if static_path.exists():
 async def health_check():
     return {"status": "healthy"}
 
+@app.get("/api/health")
+async def api_health_check():
+    """Health check for API endpoints"""
+    return {
+        "status": "healthy",
+        "endpoints": {
+            "patents": "/api/patents",
+            "saved_patents": "/api/patents/save",
+            "saved_inventors": "/api/inventors/save"
+        }
+    }
+
 # Fallback route for React client-side routing
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str, request: Request):
