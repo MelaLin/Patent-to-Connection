@@ -49,6 +49,38 @@ async def api_health_check():
         }
     }
 
+@app.get("/api/health/db")
+async def database_health_check():
+    """Health check for database connection"""
+    from app.core.database import AsyncSessionLocal
+    from sqlalchemy import text
+    
+    try:
+        async with AsyncSessionLocal() as session:
+            # Test database connection
+            result = await session.execute(text("SELECT 1 as test"))
+            test_value = result.scalar()
+            
+            if test_value == 1:
+                return {
+                    "status": "healthy",
+                    "database": "connected",
+                    "message": "Database connection successful"
+                }
+            else:
+                return {
+                    "status": "unhealthy",
+                    "database": "error",
+                    "message": "Database query returned unexpected result"
+                }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "database": "error",
+            "message": f"Database connection failed: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
 # Fallback route for React client-side routing
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str, request: Request):

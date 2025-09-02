@@ -29,6 +29,10 @@ async def save_patent(
     logger.info(f"Patent data: {patent_data.model_dump()}")
     
     try:
+        # Test database connection first
+        await db.execute("SELECT 1")
+        logger.info("Database connection verified")
+        
         # Check if patent already exists for this user
         existing_patent = await db.execute(
             select(SavedPatent).where(
@@ -75,6 +79,13 @@ async def save_patent(
     except HTTPException:
         # Re-raise HTTPExceptions as they already have proper status codes
         raise
+    except ConnectionError as e:
+        logger.error(f"Database connection error: {str(e)}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(
+            status_code=503, 
+            detail=f"Database connection failed: {str(e)}"
+        )
     except Exception as e:
         await db.rollback()
         logger.error(f"Failed to save patent: {str(e)}", exc_info=True)

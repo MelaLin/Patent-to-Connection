@@ -4,7 +4,9 @@ from sqlalchemy import pool
 from alembic import context
 from app.core.config import settings
 from app.core.database import Base, get_database_url
-from app.models import Patent, WatchlistItem, Alert
+
+# Import all models to ensure they are registered with SQLAlchemy
+from app.models.saved_items import SavedPatent, SavedInventor
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
