@@ -714,7 +714,7 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
 app.delete('/api/watchlist/patents/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const watchlist = await loadWatchlist();
+    const watchlist = await readWatchlistData();
     
     const patentIndex = watchlist.patents.findIndex(patent => patent.id === id);
     if (patentIndex === -1) {
@@ -722,7 +722,7 @@ app.delete('/api/watchlist/patents/:id', async (req, res) => {
     }
     
     watchlist.patents.splice(patentIndex, 1);
-    await saveWatchlist(watchlist);
+    await writeWatchlistData(watchlist);
     
     res.json({ success: true, message: 'Patent deleted successfully' });
   } catch (error) {
@@ -734,7 +734,7 @@ app.delete('/api/watchlist/patents/:id', async (req, res) => {
 app.delete('/api/watchlist/queries/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const watchlist = await loadWatchlist();
+    const watchlist = await readWatchlistData();
     
     const queryIndex = watchlist.queries.findIndex(query => query.id === id);
     if (queryIndex === -1) {
@@ -742,7 +742,7 @@ app.delete('/api/watchlist/queries/:id', async (req, res) => {
     }
     
     watchlist.queries.splice(queryIndex, 1);
-    await saveWatchlist(watchlist);
+    await writeWatchlistData(watchlist);
     
     res.json({ success: true, message: 'Query deleted successfully' });
   } catch (error) {
@@ -754,7 +754,7 @@ app.delete('/api/watchlist/queries/:id', async (req, res) => {
 app.delete('/api/watchlist/inventors/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const watchlist = await loadWatchlist();
+    const watchlist = await readWatchlistData();
     
     const inventorIndex = watchlist.inventors.findIndex(inventor => inventor.id === id);
     if (inventorIndex === -1) {
@@ -762,7 +762,7 @@ app.delete('/api/watchlist/inventors/:id', async (req, res) => {
     }
     
     watchlist.inventors.splice(inventorIndex, 1);
-    await saveWatchlist(watchlist);
+    await writeWatchlistData(watchlist);
     
     res.json({ success: true, message: 'Inventor deleted successfully' });
   } catch (error) {
