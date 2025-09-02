@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Render Deployment Test - Real SerpAPI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .patent-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .patent-title {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        .patent-id {
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .links a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .links a:hover {
+            background-color: #218838;
+        }
+        .url-input-section {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Render Deployment Test - Real SerpAPI Integration</h1>
+    <p>This page tests your Render deployment with the real SerpAPI key you've configured.</p>
+
+    <div class="url-input-section">
+        <h2>🔗 Enter Your Render URL</h2>
+        <p><strong>Step 1:</strong> Enter your Render app URL below (e.g., https://your-app-name.onrender.com)</p>
+        <input type="url" id="renderUrl" placeholder="https://your-app-name.onrender.com" />
+        <button onclick="setRenderUrl()">Set Render URL</button>
+        <div id="urlStatus"></div>
+    </div>
+
+    <div class="container">
+        <h2>🔧 Environment Configuration</h2>
+        <div class="test-section info">
+            <h3>Current Setup:</h3>
+            <ul>
+                <li><strong>Local Development:</strong> Uses fallback data (placeholder SERPAPI_KEY)</li>
+                <li><strong>Render Deployment:</strong> Uses real SerpAPI data (your configured SERPAPI_KEY)</li>
+                <li><strong>Environment Variable:</strong> SERPAPI_KEY set in Render dashboard</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🧪 Test Your Render Deployment</h2>
+        
+        <div class="test-section">
+            <h3>1. Test Local vs Render</h3>
+            <p>Compare local fallback data with Render's real SerpAPI data</p>
+            <button onclick="testLocalAPI()">Test Local API (Fallback)</button>
+            <button onclick="testRenderAPI()" id="testRenderBtn" disabled>Test Render API (Real Data)</button>
+            <div id="comparison-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Real Patent Data Validation</h3>
+            <p>Verify that Render returns real patent data with actual patent IDs</p>
+            <button onclick="validateRealData()" id="validateBtn" disabled>Validate Real Data</button>
+            <div id="validation-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Debug SerpAPI Configuration</h3>
+            <p>Check if SerpAPI key is properly configured in Render</p>
+            <button onclick="debugSerpAPI()" id="debugBtn" disabled>Debug SerpAPI Config</button>
+            <div id="debug-result" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📋 Expected Results</h2>
+        <div class="test-section info">
+            <h3>When SERPAPI_KEY is properly configured:</h3>
+            <ul>
+                <li><strong>Real Patent IDs:</strong> Actual patent numbers like US10123456B2, US9876543A1, etc.</li>
+                <li><strong>Real Titles:</strong> Actual patent titles from Google Patents</li>
+                <li><strong>Real Abstracts:</strong> Actual patent descriptions</li>
+                <li><strong>Real Inventors:</strong> Actual inventor names</li>
+                <li><strong>Real Assignees:</strong> Actual company names</li>
+                <li><strong>Correct URLs:</strong> Working Google Patents links</li>
+                <li><strong>No Fallback Message:</strong> Should not show "Using fallback data"</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="links">
+        <a href="http://localhost:8081" target="_blank">Local Frontend</a>
+        <a href="#" id="renderFrontendLink" target="_blank">Render Frontend</a>
+        <a href="http://localhost:3001/api/health" target="_blank">Local Backend Health</a>
+    </div>
+
+    <script>
+        const LOCAL_API = 'http://localhost:3001/api';
+        let RENDER_API = null;
+
+        function setRenderUrl() {
+            const urlInput = document.getElementById('renderUrl');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                document.getElementById('urlStatus').innerHTML = '<p style="color: red;">Please enter a valid URL</p>';
+                return;
+            }
+
+            // Validate URL format
+            try {
+                const urlObj = new URL(url);
+                if (!urlObj.hostname.includes('onrender.com')) {
+                    document.getElementById('urlStatus').innerHTML = '<p style="color: orange;">Warning: URL doesn\'t appear to be a Render URL</p>';
+                }
+            } catch (e) {
+                document.getElementById('urlStatus').innerHTML = '<p style="color: red;">Invalid URL format</p>';
+                return;
+            }
+
+            // Set the API URL
+            RENDER_API = url.endsWith('/') ? url + 'api' : url + '/api';
+            
+            // Update status and enable buttons
+            document.getElementById('urlStatus').innerHTML = `
+                <p style="color: green;">✅ Render URL set: ${RENDER_API}</p>
+                <p><strong>Next:</strong> Click "Test Render API" to verify your deployment</p>
+            `;
+            
+            // Enable buttons
+            document.getElementById('testRenderBtn').disabled = false;
+            document.getElementById('validateBtn').disabled = false;
+            document.getElementById('debugBtn').disabled = false;
+            
+            // Update render frontend link
+            document.getElementById('renderFrontendLink').href = url;
+            document.getElementById('renderFrontendLink').textContent = 'Render Frontend';
+        }
+
+        function displayResult(elementId, data, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${isSuccess ? 'success' : 'error'}`;
+            element.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        async function testLocalAPI() {
+            try {
+                const response = await fetch(`${LOCAL_API}/patents/search/serpapi?query=hydroponics&limit=2`);
+                const data = await response.json();
+                
+                const isFallback = data.message && data.message.includes('fallback');
+                displayResult('comparison-result', {
+                    source: 'Local API',
+                    isFallback: isFallback,
+                    message: isFallback ? 'Using fallback data (expected)' : 'Using real data (unexpected)',
+                    samplePatent: data.results && data.results[0] ? {
+                        patent_id: data.results[0].patent_id,
+                        title: data.results[0].title,
+                        assignee: data.results[0].assignee
+                    } : null,
+                    fullResponse: data
+                }, true);
+            } catch (error) {
+                displayResult('comparison-result', { 
+                    source: 'Local API',
+                    error: error.message 
+                }, false);
+            }
+        }
+
+        async function testRenderAPI() {
+            if (!RENDER_API) {
+                displayResult('comparison-result', { 
+                    error: 'Please set your Render URL first',
+                    note: 'Enter your Render app URL in the input field above'
+                }, false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${RENDER_API}/patents/search/serpapi?query=hydroponics&limit=2`);
+                const data = await response.json();
+                
+                const isRealData = !data.message || !data.message.includes('fallback');
+                displayResult('comparison-result', {
+                    source: 'Render API',
+                    isRealData: isRealData,
+                    message: isRealData ? 'Using real SerpAPI data (expected)' : 'Using fallback data (check SERPAPI_KEY)',
+                    samplePatent: data.results && data.results[0] ? {
+                        patent_id: data.results[0].patent_id,
+                        title: data.results[0].title,
+                        assignee: data.results[0].assignee
+                    } : null,
+                    fullResponse: data
+                }, isRealData);
+            } catch (error) {
+                displayResult('comparison-result', { 
+                    source: 'Render API',
+                    error: error.message,
+                    note: 'Make sure your Render app is deployed and accessible'
+                }, false);
+            }
+        }
+
+        async function validateRealData() {
+            if (!RENDER_API) {
+                displayResult('validation-result', { 
+                    error: 'Please set your Render URL first',
+                    note: 'Enter your Render app URL in the input field above'
+                }, false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${RENDER_API}/patents/search/serpapi?query=hydroponics&limit=3`);
+                const data = await response.json();
+                
+                if (!data.results || data.results.length === 0) {
+                    displayResult('validation-result', { 
+                        error: 'No results returned',
+                        note: 'Check if SERPAPI_KEY is properly configured in Render'
+                    }, false);
+                    return;
+                }
+
+                const validations = data.results.map(patent => {
+                    const isRealPatentId = patent.patent_id && 
+                                         patent.patent_id.length > 0 && 
+                                         !patent.patent_id.includes('1234567') &&
+                                         !patent.patent_id.includes('9876543');
+                    
+                    return {
+                        patent_id: patent.patent_id,
+                        isRealPatentId: isRealPatentId,
+                        hasTitle: !!patent.title,
+                        hasAbstract: !!patent.abstract,
+                        hasInventors: Array.isArray(patent.inventors) && patent.inventors.length > 0,
+                        hasAssignee: !!patent.assignee,
+                        hasGooglePatentsUrl: !!patent.google_patents_url,
+                        isRealData: isRealPatentId && patent.title && patent.abstract
+                    };
+                });
+
+                const allRealData = validations.every(v => v.isRealData);
+                const summary = {
+                    totalPatents: data.results.length,
+                    realDataPatents: validations.filter(v => v.isRealData).length,
+                    fallbackPatents: validations.filter(v => !v.isRealData).length,
+                    isUsingRealSerpAPI: allRealData,
+                    validations: validations,
+                    message: allRealData ? 
+                        '✅ Success! Render is using real SerpAPI data' : 
+                        '⚠️ Some patents appear to be fallback data. Check SERPAPI_KEY configuration.'
+                };
+
+                displayResult('validation-result', summary, allRealData);
+            } catch (error) {
+                displayResult('validation-result', { 
+                    error: error.message,
+                    note: 'Make sure your Render app is deployed and accessible'
+                }, false);
+            }
+        }
+
+        async function debugSerpAPI() {
+            if (!RENDER_API) {
+                displayResult('debug-result', { 
+                    error: 'Please set your Render URL first',
+                    note: 'Enter your Render app URL in the input field above'
+                }, false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${RENDER_API}/debug/serpapi`);
+                const data = await response.json();
+                
+                const isConfigured = data.serpapi_key_exists && !data.serpapi_key_is_placeholder;
+                
+                displayResult('debug-result', {
+                    source: 'Render API Debug',
+                    serpapi_configured: isConfigured,
+                    key_exists: data.serpapi_key_exists,
+                    key_is_placeholder: data.serpapi_key_is_placeholder,
+                    key_length: data.serpapi_key_length,
+                    key_preview: data.serpapi_key_preview,
+                    environment: data.environment_variables,
+                    message: isConfigured ? 
+                        '✅ SerpAPI key is properly configured' : 
+                        '⚠️ SerpAPI key is not properly configured - check Render environment variables',
+                    fullResponse: data
+                }, isConfigured);
+            } catch (error) {
+                displayResult('debug-result', { 
+                    source: 'Render API Debug',
+                    error: error.message,
+                    note: 'Make sure your Render app is deployed and accessible'
+                }, false);
+            }
+        }
+
+        // Auto-run local test on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testLocalAPI();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
