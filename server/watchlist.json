@@ -1,5 +1,47 @@
 {
-  "patents": [],
-  "queries": [],
-  "inventors": []
+  "patents": [
+    {
+      "id": "1756859266455",
+      "title": "Smart Hydroponic Monitoring System",
+      "abstract": "A monitoring system for hydroponic environments that tracks pH, temperature, and nutrient levels for automated adjustments.",
+      "assignee": "SmartGrow Systems",
+      "inventors": [
+        {
+          "name": "Dr. Emily Davis"
+        },
+        {
+          "name": "Robert Wilson"
+        }
+      ],
+      "link": "https://patents.google.com/patent/US8765432B1",
+      "date_filed": "2024-01-01T08:00:00.000Z",
+      "saved_at": "2025-09-03T00:27:46.455Z",
+      "user_id": "dev"
+    }
+  ],
+  "queries": [
+    {
+      "id": "1756859267198",
+      "query": "solar",
+      "filters": {},
+      "created_at": "2025-09-03T00:27:47.198Z",
+      "user_id": "dev"
+    }
+  ],
+  "inventors": [
+    {
+      "id": "1756859256951",
+      "name": "Robert Wilson",
+      "associated_patent_id": "US8765432B1",
+      "created_at": "2025-09-03T00:27:36.951Z",
+      "user_id": "dev"
+    },
+    {
+      "id": "1756859261648",
+      "name": "Dr. Emily Davis",
+      "associated_patent_id": "US8765432B1",
+      "created_at": "2025-09-03T00:27:41.648Z",
+      "user_id": "dev"
+    }
+  ]
 }

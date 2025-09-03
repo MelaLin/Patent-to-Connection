@@ -783,6 +783,32 @@ app.delete('/api/watchlist/inventors/:id', async (req, res) => {
   }
 });
 
+// Clear watchlist endpoint
+app.post('/api/watchlist/clear', async (req, res) => {
+  try {
+    const emptyWatchlist = {
+      patents: [],
+      queries: [],
+      inventors: []
+    };
+    
+    await writeWatchlistData(emptyWatchlist);
+    
+    console.log('Watchlist cleared successfully');
+    
+    return res.json({
+      success: true,
+      message: 'Watchlist cleared successfully'
+    });
+  } catch (error) {
+    console.error('Error clearing watchlist:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to clear watchlist'
+    });
+  }
+});
+
 // Test file operations
 app.get('/api/test-file-ops', async (req, res) => {
   try {

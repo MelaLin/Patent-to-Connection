@@ -80,7 +80,7 @@ const Search = () => {
         offset: offset.toString()
       });
       
-      const response = await fetch(`http://localhost:3001/api/patents/search/serpapi?${params.toString()}`);
+      const response = await fetch(`https://patent-forge-backend.onrender.com/api/patents/search/serpapi?${params.toString()}`);
       
       console.log(`Response status: ${response.status}`);
       
