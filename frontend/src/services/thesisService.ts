@@ -19,10 +19,20 @@ export interface ThesisUpdateData {
 class ThesisService {
   private baseUrl = 'https://patent-forge-backend.onrender.com/api';
 
+  private getHeaders() {
+    const userEmail = localStorage.getItem('userEmail');
+    return {
+      'Content-Type': 'application/json',
+      'email': userEmail || ''
+    };
+  }
+
   // Get all theses
   async getTheses(): Promise<Thesis[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/theses`);
+      const response = await fetch(`${this.baseUrl}/theses`, {
+        headers: { 'email': localStorage.getItem('userEmail') || '' }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -38,9 +48,7 @@ class ThesisService {
     try {
       const response = await fetch(`${this.baseUrl}/theses`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(thesisData),
       });
 
@@ -62,9 +70,7 @@ class ThesisService {
     try {
       const response = await fetch(`${this.baseUrl}/theses/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(thesisData),
       });
 
@@ -86,6 +92,7 @@ class ThesisService {
     try {
       const response = await fetch(`${this.baseUrl}/theses/${id}`, {
         method: 'DELETE',
+        headers: { 'email': localStorage.getItem('userEmail') || '' }
       });
 
       const result = await response.json();
@@ -106,9 +113,7 @@ class ThesisService {
     try {
       const response = await fetch(`${this.baseUrl}/theses/${id}/star`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
       });
 
       const result = await response.json();
@@ -127,7 +132,9 @@ class ThesisService {
   // Get starred thesis
   async getStarredThesis(): Promise<{ success: boolean; data?: Thesis; error?: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/theses/starred`);
+      const response = await fetch(`${this.baseUrl}/theses/starred`, {
+        headers: { 'email': localStorage.getItem('userEmail') || '' }
+      });
       const result = await response.json();
       
       if (!response.ok) {

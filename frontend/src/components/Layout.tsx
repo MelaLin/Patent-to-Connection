@@ -1,12 +1,13 @@
-import { Link, useLocation } from "react-router-dom";
-import { Search, Bookmark, FileText, Menu, X } from "lucide-react";
+import { Link, useLocation, Routes, Route, Navigate } from "react-router-dom";
+import { Search, Bookmark, FileText, Menu, X, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-
-interface LayoutProps {
-  children: React.ReactNode;
-}
+import { useAuth } from "@/contexts/AuthContext";
+import Search from "@/pages/Search";
+import Watchlist from "@/pages/Watchlist";
+import Theses from "@/pages/Theses";
+import NotFound from "@/pages/NotFound";
 
 const navigation = [
   {
@@ -26,9 +27,31 @@ const navigation = [
   },
 ];
 
-export function Layout({ children }: LayoutProps) {
+export function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, loading, logout } = useAuth();
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,15 +90,34 @@ export function Layout({ children }: LayoutProps) {
             </nav>
           </div>
 
-          {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-4">
+            {/* User info */}
+            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span>{user.name}</span>
+            </div>
+
+            {/* Logout button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="hidden md:flex"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -102,6 +144,23 @@ export function Layout({ children }: LayoutProps) {
                   </Link>
                 );
               })}
+              
+              {/* Mobile user info and logout */}
+              <div className="pt-4 border-t">
+                <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  <span>{user.name}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="w-full justify-start"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -109,7 +168,13 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="flex-1">
-        {children}
+        <Routes>
+          <Route path="/" element={<Search />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/watchlist" element={<Watchlist />} />
+          <Route path="/theses" element={<Theses />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </main>
     </div>
   );

@@ -1,0 +1,20 @@
+{
+  "patents": [
+    {
+      "title": "Test Patent",
+      "abstract": "Test abstract",
+      "assignee": "Test Company",
+      "inventors": [
+        {
+          "name": "Test Inventor"
+        }
+      ],
+      "id": "13720a53-10a5-457b-9c90-d2dd7481c1a2",
+      "user_id": "6e0d2a54-996c-4faa-8683-9967e95c7c3f",
+      "saved_at": "2025-09-03T01:21:21.965Z"
+    }
+  ],
+  "queries": [],
+  "inventors": [],
+  "theses": []
+}

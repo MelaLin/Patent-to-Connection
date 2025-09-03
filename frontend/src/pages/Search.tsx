@@ -134,7 +134,12 @@ const Search = () => {
         offset: offset.toString()
       });
       
-      const response = await fetch(`https://patent-forge-backend.onrender.com/api/patents/search/serpapi?${params.toString()}`);
+      const userEmail = localStorage.getItem('userEmail');
+      const response = await fetch(`https://patent-forge-backend.onrender.com/api/patents/search/serpapi?${params.toString()}`, {
+        headers: {
+          'email': userEmail || ''
+        }
+      });
       
       console.log(`Response status: ${response.status}`);
       

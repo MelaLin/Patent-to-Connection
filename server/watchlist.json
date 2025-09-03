@@ -32,6 +32,21 @@
       "date_filed": "2025-01-01T08:00:00.000Z",
       "saved_at": "2025-09-03T00:44:35.789Z",
       "user_id": "dev"
+    },
+    {
+      "id": "1756861353806",
+      "title": "Utility pole solar energy collector system",
+      "abstract": "A solar energy harvesting assembly having a unique attachment that can be arranged, mounted, moved and attached to new or existing structures. Solar rings are mounted on any vertical structure that may benefit from solar power using an aesthetically pleasing design that is resistant to wind load.",
+      "assignee": "Vertical Solar Systems Llc",
+      "inventors": [
+        {
+          "name": "Matthew Chentnik"
+        }
+      ],
+      "link": "https://patents.google.com/patent/US11489484B2/en",
+      "date_filed": "2022-01-01T08:00:00.000Z",
+      "saved_at": "2025-09-03T01:02:33.806Z",
+      "user_id": "dev"
     }
   ],
   "queries": [
@@ -47,6 +62,13 @@
       "query": "soybean",
       "filters": {},
       "created_at": "2025-09-03T00:44:35.066Z",
+      "user_id": "dev"
+    },
+    {
+      "id": "1756861350980",
+      "query": "solar",
+      "filters": {},
+      "created_at": "2025-09-03T01:02:30.980Z",
       "user_id": "dev"
     }
   ],
@@ -70,6 +92,13 @@
       "name": "Ronald J. Brinker",
       "associated_patent_id": "US12305182B2",
       "created_at": "2025-09-03T00:44:37.337Z",
+      "user_id": "dev"
+    },
+    {
+      "id": "1756861352558",
+      "name": "Matthew Chentnik",
+      "associated_patent_id": "US11489484B2",
+      "created_at": "2025-09-03T01:02:32.558Z",
       "user_id": "dev"
     }
   ]

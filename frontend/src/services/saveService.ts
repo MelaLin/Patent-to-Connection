@@ -56,18 +56,24 @@ export interface WatchlistData {
 }
 
 class SaveService {
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = 'https://patent-forge-backend.onrender.com/api';
+
+  private getHeaders() {
+    const userEmail = localStorage.getItem('userEmail');
+    return {
+      'Content-Type': 'application/json',
+      'email': userEmail || ''
+    };
+  }
 
   // Save a patent
   async savePatent(patentData: PatentSaveData): Promise<{ success: boolean; data?: SavedPatent; error?: string }> {
     console.log('Sending patent data:', patentData);
     
     try {
-      const response = await fetch(`${this.baseUrl}/savePatent`, {
+      const response = await fetch(`${this.baseUrl}/watchlist/patents`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(patentData),
       });
 
@@ -105,11 +111,9 @@ class SaveService {
     console.log('Sending inventor data:', inventorData);
     
     try {
-      const response = await fetch(`${this.baseUrl}/saveInventor`, {
+      const response = await fetch(`${this.baseUrl}/watchlist/inventors`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(inventorData),
       });
 
@@ -147,11 +151,9 @@ class SaveService {
     console.log('Sending inventor data to alternative endpoint:', inventorData);
     
     try {
-      const response = await fetch(`${this.baseUrl}/inventors/save`, {
+      const response = await fetch(`${this.baseUrl}/watchlist/inventors`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(inventorData),
       });
 
@@ -189,11 +191,9 @@ class SaveService {
     console.log('Sending query data:', queryData);
     
     try {
-      const response = await fetch(`${this.baseUrl}/saveQuery`, {
+      const response = await fetch(`${this.baseUrl}/watchlist/queries`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(queryData),
       });
 
@@ -233,9 +233,7 @@ class SaveService {
     try {
       const response = await fetch(`${this.baseUrl}/watchlist/patents`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(patentData),
       });
 
