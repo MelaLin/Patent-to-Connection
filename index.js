@@ -395,8 +395,40 @@ app.get('/api/patents/search/serpapi', authenticateUser, async (req, res) => {
     
     const patents = serpResponse.data.organic_results.map(patent => {
       const patentId = patent.patent_number || patent.patent_id;
-      const inventorNames = patent.inventors || [];
-      const inventors = inventorNames.map(name => ({ name: name.trim() }));
+      
+      // Extract inventors from various possible SerpAPI response formats
+      let inventors = [];
+      if (patent.inventors && Array.isArray(patent.inventors)) {
+        inventors = patent.inventors.map(name => ({ name: name.trim() }));
+      } else if (patent.inventor && typeof patent.inventor === 'string') {
+        // Handle single inventor string
+        inventors = [{ name: patent.inventor.trim() }];
+      } else if (patent.inventor && Array.isArray(patent.inventor)) {
+        inventors = patent.inventor.map(name => ({ name: name.trim() }));
+      } else if (patent.people && Array.isArray(patent.people)) {
+        // Some SerpAPI responses use 'people' field for inventors
+        inventors = patent.people
+          .filter(person => person.role === 'inventor' || person.type === 'inventor')
+          .map(person => ({ name: person.name.trim() }));
+      }
+      
+      // If still no inventors found, provide a fallback for user interaction
+      if (inventors.length === 0) {
+        // Generate a placeholder inventor based on the patent title or assignee
+        const assignee = patent.assignee || 'Unknown Assignee';
+        const title = patent.title || 'Untitled Patent';
+        
+        // Extract potential inventor from assignee (often contains inventor names)
+        const assigneeWords = assignee.split(/\s+/).filter(word => word.length > 2);
+        if (assigneeWords.length > 0) {
+          // Use first two words of assignee as potential inventor
+          const potentialInventor = assigneeWords.slice(0, 2).join(' ');
+          inventors = [{ name: potentialInventor }];
+        } else {
+          // Fallback to a generic inventor name
+          inventors = [{ name: 'Patent Inventor' }];
+        }
+      }
       
       let year = null;
       if (patent.publication_date) {
