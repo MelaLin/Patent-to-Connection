@@ -15,6 +15,14 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'email', 'Authorization']
 }));
+
+// Add CORS debugging middleware
+app.use((req, res, next) => {
+  console.log('CORS Debug: Request origin:', req.headers.origin);
+  console.log('CORS Debug: Request method:', req.method);
+  console.log('CORS Debug: Request headers:', req.headers);
+  next();
+});
 app.use(express.json());
 
 // Multi-tenant data structure
