@@ -47,6 +47,7 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
   const handleSavePatent = async () => {
     setIsSaving(true);
     try {
+      console.log('Saving patent:', patent.title);
       const patentData: PatentSaveData = {
         title: patent.title,
         abstract: patent.abstract,
@@ -56,7 +57,9 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
         date_filed: patent.year ? new Date(patent.year, 0, 1).toISOString() : undefined
       };
 
+      console.log('Patent data to save:', patentData);
       const result = await saveService.savePatent(patentData);
+      console.log('Save patent result:', result);
       
       if (result.success) {
         setIsWatched(true);
@@ -85,11 +88,13 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
 
   const handleSaveInventor = async (inventor: { name: string; linkedin_url?: string }) => {
     try {
+      console.log('Saving inventor:', inventor.name);
       const result = await saveService.saveInventor({
         name: inventor.name,
         linkedin_url: inventor.linkedin_url,
         associated_patent_id: patent.patent_id
       });
+      console.log('Save inventor result:', result);
 
       if (result.success) {
         toast({
