@@ -56,7 +56,7 @@ export interface WatchlistData {
 }
 
 class SaveService {
-  private baseUrl = 'https://patent-forge-backend.onrender.com/api';
+  private baseUrl = 'http://localhost:3001/api';
 
   // Save a patent
   async savePatent(patentData: PatentSaveData): Promise<{ success: boolean; data?: SavedPatent; error?: string }> {
