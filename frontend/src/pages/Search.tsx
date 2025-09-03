@@ -123,7 +123,8 @@ const Search = () => {
         }
         
         // Check if there are more results
-        const hasMore = sortedPatents.length === 10 && data.total > offset + sortedPatents.length;
+        // If we got exactly 10 results, there are likely more
+        const hasMore = sortedPatents.length === 10;
         setHasMoreResults(hasMore);
         console.log(`Pagination debug: ${sortedPatents.length} results, total: ${data.total}, offset: ${offset}, hasMore: ${hasMore}`);
         

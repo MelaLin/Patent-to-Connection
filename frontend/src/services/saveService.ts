@@ -395,8 +395,12 @@ class SaveService {
 
   // Get watchlist (all saved patents, queries, and inventors)
   async getWatchlist(): Promise<WatchlistData> {
+    console.log('Fetching watchlist from:', `${this.baseUrl}/watchlist`);
+    
     try {
       const response = await fetch(`${this.baseUrl}/watchlist`);
+      
+      console.log('Watchlist response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -405,7 +409,7 @@ class SaveService {
       }
 
       const data = await response.json();
-      console.log('Watchlist data:', data);
+      console.log('Watchlist data received:', data);
       return data;
     } catch (error) {
       console.error('Network error fetching watchlist:', error);
