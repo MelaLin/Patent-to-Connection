@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Debug</title>
+</head>
+<body>
+    <h1>Authentication Debug</h1>
+    <input type="email" id="emailInput" placeholder="Enter email" value="melalin@stanford.edu">
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testWatchlist()">Test Watchlist</button>
+    <button onclick="checkStorage()">Check Storage</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+    <div id="results"></div>
+
+    <script>
+        const baseUrl = 'https://patent-forge-backend.onrender.com/api';
+        
+        function log(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+        }
+
+        function checkStorage() {
+            const localStorageEmail = localStorage.getItem('userEmail');
+            const sessionStorageEmail = sessionStorage.getItem('userEmail');
+            log('localStorage userEmail: ' + (localStorageEmail || 'null'));
+            log('sessionStorage userEmail: ' + (sessionStorageEmail || 'null'));
+        }
+
+        function clearStorage() {
+            localStorage.removeItem('userEmail');
+            sessionStorage.removeItem('userEmail');
+            log('Storage cleared');
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('emailInput').value;
+            log('Testing login with: ' + email);
+            
+            try {
+                const response = await fetch(`${baseUrl}/user/profile`, {
+                    headers: { 'email': email }
+                });
+                
+                log('Login response status: ' + response.status);
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    log('Login successful: ' + JSON.stringify(user));
+                    
+                    // Store email
+                    localStorage.setItem('userEmail', email);
+                    log('Stored email in localStorage: ' + email);
+                    
+                    // Verify storage
+                    const storedEmail = localStorage.getItem('userEmail');
+                    log('Verified stored email: ' + storedEmail);
+                } else {
+                    const errorText = await response.text();
+                    log('Login failed: ' + errorText);
+                }
+            } catch (error) {
+                log('Login error: ' + error.message);
+            }
+        }
+
+        async function testWatchlist() {
+            const email = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
+            log('Testing watchlist with email: ' + (email || 'null'));
+            
+            if (!email) {
+                log('ERROR: No email found in storage!');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${baseUrl}/watchlist`, {
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'email': email 
+                    }
+                });
+                
+                log('Watchlist response status: ' + response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('Watchlist successful: ' + JSON.stringify(data));
+                } else {
+                    const errorText = await response.text();
+                    log('Watchlist failed: ' + errorText);
+                }
+            } catch (error) {
+                log('Watchlist error: ' + error.message);
+            }
+        }
+
+        // Check storage on page load
+        checkStorage();
+    </script>
+</body>
+</html>

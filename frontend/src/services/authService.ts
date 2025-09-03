@@ -12,7 +12,7 @@ class AuthService {
     try {
       console.log('AuthService: Attempting login with email:', email);
       const response = await fetch(`${this.baseUrl}/user/profile`, {
-        headers: { 'email': email }
+        headers: { 'X-User-Email': email }
       });
       
       console.log('AuthService: Response status:', response.status);

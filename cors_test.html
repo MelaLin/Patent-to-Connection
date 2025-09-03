@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test</title>
+</head>
+<body>
+    <h1>CORS Test</h1>
+    <button onclick="testCORS()">Test CORS</button>
+    <button onclick="testWithCredentials()">Test with Credentials</button>
+    <div id="results"></div>
+
+    <script>
+        const baseUrl = 'https://patent-forge-backend.onrender.com/api';
+        
+        function log(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+        }
+
+        async function testCORS() {
+            log('Testing CORS...');
+            
+            try {
+                const response = await fetch(`${baseUrl}/watchlist`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'email': 'melalin@stanford.edu'
+                    },
+                    mode: 'cors'
+                });
+                
+                log('Response status: ' + response.status);
+                log('Response headers: ' + JSON.stringify([...response.headers.entries()]));
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('Success: ' + JSON.stringify(data));
+                } else {
+                    const errorText = await response.text();
+                    log('Error: ' + errorText);
+                }
+            } catch (error) {
+                log('CORS Error: ' + error.message);
+            }
+        }
+
+        async function testWithCredentials() {
+            log('Testing with credentials...');
+            
+            try {
+                const response = await fetch(`${baseUrl}/watchlist`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'email': 'melalin@stanford.edu'
+                    },
+                    mode: 'cors',
+                    credentials: 'include'
+                });
+                
+                log('Response status: ' + response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('Success: ' + JSON.stringify(data));
+                } else {
+                    const errorText = await response.text();
+                    log('Error: ' + errorText);
+                }
+            } catch (error) {
+                log('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

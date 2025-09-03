@@ -43,7 +43,7 @@ class ThesisService {
     
     return {
       'Content-Type': 'application/json',
-      'email': userEmail
+      'X-User-Email': userEmail
     };
   }
 

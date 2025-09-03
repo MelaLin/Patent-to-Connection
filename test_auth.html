@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Test</title>
+</head>
+<body>
+    <h1>Authentication Test</h1>
+    <input type="email" id="emailInput" placeholder="Enter email" value="melalin@stanford.edu">
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testProfile()">Test Profile</button>
+    <button onclick="testWatchlist()">Test Watchlist</button>
+    <div id="results"></div>
+
+    <script>
+        const baseUrl = 'https://patent-forge-backend.onrender.com/api';
+        
+        function log(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('emailInput').value;
+            log('Testing login with: ' + email);
+            
+            try {
+                const response = await fetch(`${baseUrl}/user/profile`, {
+                    method: 'GET',
+                    headers: {
+                        'email': email,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log('Response status: ' + response.status);
+                log('Response headers: ' + JSON.stringify([...response.headers.entries()]));
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    log('Login successful: ' + JSON.stringify(user));
+                } else {
+                    const error = await response.text();
+                    log('Login failed: ' + error);
+                }
+            } catch (error) {
+                log('Network error: ' + error.message);
+            }
+        }
+
+        async function testProfile() {
+            const email = document.getElementById('emailInput').value;
+            log('Testing profile with: ' + email);
+            
+            try {
+                const response = await fetch(`${baseUrl}/user/profile`, {
+                    method: 'GET',
+                    headers: {
+                        'email': email,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log('Profile response status: ' + response.status);
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    log('Profile successful: ' + JSON.stringify(user));
+                } else {
+                    const error = await response.text();
+                    log('Profile failed: ' + error);
+                }
+            } catch (error) {
+                log('Profile network error: ' + error.message);
+            }
+        }
+
+        async function testWatchlist() {
+            const email = document.getElementById('emailInput').value;
+            log('Testing watchlist with: ' + email);
+            
+            try {
+                const response = await fetch(`${baseUrl}/watchlist`, {
+                    method: 'GET',
+                    headers: {
+                        'email': email,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log('Watchlist response status: ' + response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('Watchlist successful: ' + JSON.stringify(data));
+                } else {
+                    const error = await response.text();
+                    log('Watchlist failed: ' + error);
+                }
+            } catch (error) {
+                log('Watchlist network error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

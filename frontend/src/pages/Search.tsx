@@ -133,7 +133,7 @@ const Search = () => {
       console.log('Search - localStorage contents:', { userEmail: localStorage.getItem('userEmail') });
       const response = await fetch(`https://patent-forge-backend.onrender.com/api/patents/search/serpapi?${params.toString()}`, {
         headers: {
-          'email': userEmail || ''
+          'X-User-Email': userEmail || ''
         }
       });
       

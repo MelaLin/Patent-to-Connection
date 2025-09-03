@@ -58,7 +58,7 @@ export interface WatchlistData {
 class SaveService {
   private baseUrl = 'https://patent-forge-backend.onrender.com/api';
 
-  private getHeaders(): { 'Content-Type': string; 'email': string } {
+  private getHeaders(): { 'Content-Type': string; 'X-User-Email': string } {
     // Get email from multiple sources for maximum reliability
     let userEmail: string | null = null;
     
@@ -89,7 +89,7 @@ class SaveService {
     
     return {
       'Content-Type': 'application/json',
-      'email': userEmail
+      'X-User-Email': userEmail
     };
   }
 

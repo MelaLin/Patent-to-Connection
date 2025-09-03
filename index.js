@@ -31,7 +31,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'email', 'Authorization', 'Origin', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Email', 'email', 'Origin', 'Accept']
 }));
 
 // Add CORS debugging middleware
@@ -232,9 +232,13 @@ async function saveUserData(userId, data) {
 
 // Authentication middleware
 async function authenticateUser(req, res, next) {
-  const email = req.headers.email;
+  // Try both header formats for maximum compatibility
+  let email = req.headers['x-user-email'] || req.headers['X-User-Email'] || req.headers.email;
+  
   console.log('Backend: authenticateUser called with email header:', email);
   console.log('Backend: All headers received:', Object.keys(req.headers));
+  console.log('Backend: X-User-Email header:', req.headers['x-user-email']);
+  console.log('Backend: email header:', req.headers.email);
   
   if (!email) {
     console.log('Backend: No email header found, returning 401');
@@ -249,6 +253,7 @@ async function authenticateUser(req, res, next) {
   
   console.log('Backend: User authenticated successfully:', user.email);
   req.user = user;
+  req.userEmail = email; // Add this for consistency
   next();
 }
 
