@@ -16,7 +16,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initAuth = async () => {
+      console.log('AuthContext: Initializing authentication...');
       const savedUser = await authService.autoLogin();
+      console.log('AuthContext: Auto-login result:', savedUser);
       setUser(savedUser);
       setLoading(false);
     };
@@ -25,7 +27,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string): Promise<boolean> => {
+    console.log('AuthContext: Login called with email:', email);
     const user = await authService.login(email);
+    console.log('AuthContext: Login result:', user);
     setUser(user);
     return !!user;
   };
