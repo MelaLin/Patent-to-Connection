@@ -60,6 +60,7 @@ class SaveService {
 
   private getHeaders() {
     const userEmail = localStorage.getItem('userEmail');
+    console.log('Getting headers, userEmail from localStorage:', userEmail);
     return {
       'Content-Type': 'application/json',
       'email': userEmail || ''
@@ -394,10 +395,12 @@ class SaveService {
   // Get watchlist (all saved patents, queries, and inventors)
   async getWatchlist(): Promise<WatchlistData> {
     console.log('Fetching watchlist from:', `${this.baseUrl}/watchlist`);
+    const headers = this.getHeaders();
+    console.log('Headers being sent:', headers);
     
     try {
       const response = await fetch(`${this.baseUrl}/watchlist`, {
-        headers: this.getHeaders()
+        headers: headers
       });
       
       console.log('Watchlist response status:', response.status);
