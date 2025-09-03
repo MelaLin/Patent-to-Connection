@@ -61,6 +61,7 @@ class SaveService {
   private getHeaders() {
     const userEmail = localStorage.getItem('userEmail');
     console.log('Getting headers, userEmail from localStorage:', userEmail);
+    console.log('localStorage contents:', { userEmail: localStorage.getItem('userEmail') });
     return {
       'Content-Type': 'application/json',
       'email': userEmail || ''
