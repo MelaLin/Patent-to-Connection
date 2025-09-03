@@ -5,7 +5,10 @@ import { PatentCard } from "@/components/PatentCard";
 import { PatentDrawer } from "@/components/PatentDrawer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Lightbulb, Cpu, Zap, Leaf, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Lightbulb, Cpu, Zap, Leaf, AlertCircle, Star, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveService } from "@/services/saveService";
 import { useLocation } from "react-router-dom";
@@ -25,11 +28,22 @@ interface Patent {
   jurisdiction?: string;
   google_patents_url?: string;
   pdf?: string;
+  alignment_score?: number;
 }
 
 interface Filters {
   yearRange: [number, number];
   jurisdiction: string;
+}
+
+interface SearchResponse {
+  results: Patent[];
+  total: number;
+  query: string;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+  starred_thesis?: { id: string; title: string } | null;
 }
 
 const Search = () => {
@@ -43,6 +57,9 @@ const Search = () => {
   const [isSavingQuery, setIsSavingQuery] = useState(false);
   const [currentOffset, setCurrentOffset] = useState(0);
   const [hasMoreResults, setHasMoreResults] = useState(true);
+  const [starredThesis, setStarredThesis] = useState<{ id: string; title: string } | null>(null);
+  const [alignmentThreshold, setAlignmentThreshold] = useState(0);
+  const [sortBy, setSortBy] = useState<'relevance' | 'date' | 'alignment'>('relevance');
   const { toast } = useToast();
   const location = useLocation();
 
@@ -54,13 +71,50 @@ const Search = () => {
     }
   }, [location.state]);
 
-  // Sort patents by publication date (most recent first)
+  // Re-filter and re-sort patents when alignment settings change
+  useEffect(() => {
+    if (patents.length > 0) {
+      const processedPatents = getFilteredAndSortedPatents(patents);
+      setPatents(processedPatents);
+    }
+  }, [alignmentThreshold, sortBy, starredThesis]);
+
+    // Sort patents by publication date (most recent first)
   const sortPatentsByDate = (patents: Patent[]): Patent[] => {
     return [...patents].sort((a, b) => {
       const dateA = a.publication_date ? new Date(a.publication_date).getTime() : 0;
       const dateB = b.publication_date ? new Date(b.publication_date).getTime() : 0;
       return dateB - dateA; // Descending order (most recent first)
     });
+  };
+
+  // Sort patents by alignment score (highest first)
+  const sortPatentsByAlignment = (patents: Patent[]): Patent[] => {
+    return [...patents].sort((a, b) => {
+      const scoreA = a.alignment_score || 0;
+      const scoreB = b.alignment_score || 0;
+      return scoreB - scoreA; // Descending order (highest first)
+    });
+  };
+
+  // Filter and sort patents based on current settings
+  const getFilteredAndSortedPatents = (patents: Patent[]): Patent[] => {
+    let filtered = patents;
+    
+    // Filter by alignment threshold if there's a starred thesis
+    if (starredThesis && alignmentThreshold > 0) {
+      filtered = filtered.filter(patent => (patent.alignment_score || 0) >= alignmentThreshold / 100);
+    }
+    
+    // Sort based on selected option
+    switch (sortBy) {
+      case 'date':
+        return sortPatentsByDate(filtered);
+      case 'alignment':
+        return starredThesis ? sortPatentsByAlignment(filtered) : filtered;
+      default:
+        return filtered; // Relevance (as returned by API)
+    }
   };
 
   const searchPatents = async (query: string, offset = 0) => {
@@ -96,30 +150,33 @@ const Search = () => {
       
       // Check if data.results exists and is an array
       if (data.results && Array.isArray(data.results)) {
-        // Sort patents by publication date (most recent first)
-        const sortedPatents = sortPatentsByDate(data.results);
-        console.log('Sorted patents length:', sortedPatents.length);
+        // Update starred thesis info
+        setStarredThesis(data.starred_thesis || null);
+        
+        // Get filtered and sorted patents
+        const processedPatents = getFilteredAndSortedPatents(data.results);
+        console.log('Processed patents length:', processedPatents.length);
         
         if (offset === 0) {
           // New search - replace results
-          setPatents(sortedPatents);
-          console.log('Replaced patents, new count:', sortedPatents.length);
+          setPatents(processedPatents);
+          console.log('Replaced patents, new count:', processedPatents.length);
         } else {
           // Load more - append results
           setPatents(prev => {
-            const newPatents = [...prev, ...sortedPatents];
+            const newPatents = [...prev, ...processedPatents];
             console.log('Appended patents, total count:', newPatents.length);
             return newPatents;
           });
         }
         
         // Check if there are more results - use backend's hasMore field
-        const hasMore = data.hasMore || sortedPatents.length === 10;
+        const hasMore = data.hasMore || processedPatents.length === 10;
         setHasMoreResults(hasMore);
-        console.log(`Pagination debug: ${sortedPatents.length} results, total: ${data.total}, offset: ${offset}, hasMore: ${hasMore}`);
-        console.log(`Backend hasMore: ${data.hasMore}, sortedPatents.length === 10: ${sortedPatents.length === 10}`);
+        console.log(`Pagination debug: ${processedPatents.length} results, total: ${data.total}, offset: ${offset}, hasMore: ${hasMore}`);
+        console.log(`Backend hasMore: ${data.hasMore}, processedPatents.length === 10: ${processedPatents.length === 10}`);
         
-        console.log(`Found ${sortedPatents.length} patents, sorted by date`);
+        console.log(`Found ${processedPatents.length} patents, processed`);
       } else {
         console.error('Invalid response format:', data);
         if (offset === 0) {
@@ -304,7 +361,55 @@ const Search = () => {
         {/* Search and filters */}
         <div className="space-y-4">
           <SearchBar onSearch={searchPatents} loading={loading} />
-          {/* Filters removed - focusing on relevance and recency */}
+          
+          {/* Alignment Controls */}
+          {starredThesis && (
+            <Card className="p-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Active Thesis: {starredThesis.title}</span>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary">
+                    <Target className="h-3 w-3 mr-1" />
+                    Alignment Scoring Enabled
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Minimum Alignment Score</label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[alignmentThreshold]}
+                        onValueChange={(value) => setAlignmentThreshold(value[0])}
+                        max={100}
+                        min={0}
+                        step={5}
+                        className="flex-1"
+                      />
+                      <span className="text-sm font-medium min-w-[3rem]">
+                        {alignmentThreshold}%
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Sort By</label>
+                    <Select value={sortBy} onValueChange={(value: 'relevance' | 'date' | 'alignment') => setSortBy(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="relevance">Relevance</SelectItem>
+                        <SelectItem value="date">Date (Recent First)</SelectItem>
+                        <SelectItem value="alignment" disabled={!starredThesis}>Alignment Score</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Results */}
@@ -345,7 +450,8 @@ const Search = () => {
                         inventors: patent.inventors || inventors,
                         year: patent.year || (patent.publication_date ? new Date(patent.publication_date).getFullYear() : undefined),
                         jurisdiction: patent.jurisdiction || "US",
-                        google_patents_url: patent.google_patents_url || patent.patent_link || `https://patents.google.com/patent/${patent.patent_id}`
+                        google_patents_url: patent.google_patents_url || patent.patent_link || `https://patents.google.com/patent/${patent.patent_id}`,
+                        alignment_score: patent.alignment_score
                       }}
                       onDetails={() => handlePatentDetails(patent)}
                       onInventorClick={(inventor) => {

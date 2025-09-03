@@ -15,6 +15,7 @@ interface Patent {
   year: number;
   jurisdiction: string;
   google_patents_url: string;
+  alignment_score?: number;
 }
 
 interface PatentCardProps {
@@ -124,6 +125,11 @@ export function PatentCard({ patent, onDetails, onInventorClick }: PatentCardPro
               <Badge variant="secondary" className="text-xs">
                 {patent.jurisdiction}
               </Badge>
+              {patent.alignment_score !== undefined && (
+                <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/20">
+                  {Math.round(patent.alignment_score * 100)}% Match
+                </Badge>
+              )}
             </div>
             <CardTitle className="text-lg leading-tight hover:text-primary cursor-pointer transition-colors">
               {patent.title}

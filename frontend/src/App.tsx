@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import Search from "./pages/Search";
 import Watchlist from "./pages/Watchlist";
+import Theses from "./pages/Theses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
             <Route path="/" element={<Search />} />
             <Route path="/search" element={<Search />} />
             <Route path="/watchlist" element={<Watchlist />} />
+            <Route path="/theses" element={<Theses />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

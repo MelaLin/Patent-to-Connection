@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, Bookmark, Menu, X } from "lucide-react";
+import { Search, Bookmark, FileText, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -18,6 +18,11 @@ const navigation = [
     name: "Watchlist",
     href: "/watchlist",
     icon: Bookmark,
+  },
+  {
+    name: "Theses",
+    href: "/theses",
+    icon: FileText,
   },
 ];
 

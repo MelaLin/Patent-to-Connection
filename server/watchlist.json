@@ -17,6 +17,21 @@
       "date_filed": "2024-01-01T08:00:00.000Z",
       "saved_at": "2025-09-03T00:27:46.455Z",
       "user_id": "dev"
+    },
+    {
+      "id": "1756860275789",
+      "title": "Soybean transgenic event MON 87708 and methods of use thereof",
+      "abstract": "The invention provides a transgenic soybean event MON 87708 plant and plants, plant cells, seeds, plant parts, and commodity products derived from event MON 87708. The invention also provides polynucleotides specific for event MON 87708 and plants, plant cells, seeds, plant parts, and commodity …",
+      "assignee": "Monsanto Technology Llc",
+      "inventors": [
+        {
+          "name": "Ronald J. Brinker"
+        }
+      ],
+      "link": "https://patents.google.com/patent/US12305182B2/en",
+      "date_filed": "2025-01-01T08:00:00.000Z",
+      "saved_at": "2025-09-03T00:44:35.789Z",
+      "user_id": "dev"
     }
   ],
   "queries": [
@@ -25,6 +40,13 @@
       "query": "solar",
       "filters": {},
       "created_at": "2025-09-03T00:27:47.198Z",
+      "user_id": "dev"
+    },
+    {
+      "id": "1756860275066",
+      "query": "soybean",
+      "filters": {},
+      "created_at": "2025-09-03T00:44:35.066Z",
       "user_id": "dev"
     }
   ],
@@ -41,6 +63,13 @@
       "name": "Dr. Emily Davis",
       "associated_patent_id": "US8765432B1",
       "created_at": "2025-09-03T00:27:41.648Z",
+      "user_id": "dev"
+    },
+    {
+      "id": "1756860277337",
+      "name": "Ronald J. Brinker",
+      "associated_patent_id": "US12305182B2",
+      "created_at": "2025-09-03T00:44:37.337Z",
       "user_id": "dev"
     }
   ]

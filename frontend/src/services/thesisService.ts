@@ -1,0 +1,145 @@
+export interface Thesis {
+  id: string;
+  title: string;
+  content: string;
+  starred: boolean;
+  created_at: string;
+}
+
+export interface ThesisCreateData {
+  title: string;
+  content: string;
+}
+
+export interface ThesisUpdateData {
+  title: string;
+  content: string;
+}
+
+class ThesisService {
+  private baseUrl = 'https://patent-forge-backend.onrender.com/api';
+
+  // Get all theses
+  async getTheses(): Promise<Thesis[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/theses`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching theses:', error);
+      throw error;
+    }
+  }
+
+  // Create new thesis
+  async createThesis(thesisData: ThesisCreateData): Promise<{ success: boolean; data?: Thesis; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/theses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(thesisData),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        return { success: false, error: result.error || 'Failed to create thesis' };
+      }
+
+      return { success: true, data: result.data };
+    } catch (error) {
+      console.error('Error creating thesis:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  // Update thesis
+  async updateThesis(id: string, thesisData: ThesisUpdateData): Promise<{ success: boolean; data?: Thesis; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/theses/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(thesisData),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        return { success: false, error: result.error || 'Failed to update thesis' };
+      }
+
+      return { success: true, data: result.data };
+    } catch (error) {
+      console.error('Error updating thesis:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  // Delete thesis
+  async deleteThesis(id: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/theses/${id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        return { success: false, error: result.error || 'Failed to delete thesis' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting thesis:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  // Star thesis
+  async starThesis(id: string): Promise<{ success: boolean; data?: Thesis; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/theses/${id}/star`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        return { success: false, error: result.error || 'Failed to star thesis' };
+      }
+
+      return { success: true, data: result.data };
+    } catch (error) {
+      console.error('Error starring thesis:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  // Get starred thesis
+  async getStarredThesis(): Promise<{ success: boolean; data?: Thesis; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/theses/starred`);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        return { success: false, error: result.error || 'Failed to fetch starred thesis' };
+      }
+
+      return { success: true, data: result.data };
+    } catch (error) {
+      console.error('Error fetching starred thesis:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+}
+
+export const thesisService = new ThesisService();

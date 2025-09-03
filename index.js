@@ -19,6 +19,9 @@ const WATCHLIST_FILE = path.join(__dirname, 'watchlist.json');
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
 const SERPAPI_BASE_URL = 'https://serpapi.com/search.json';
 
+// Thesis data structure
+const THESES_FILE = path.join(__dirname, 'theses.json');
+
 // Initialize watchlist.json if it doesn't exist
 async function initializeWatchlistFile() {
   try {
@@ -55,6 +58,66 @@ async function writeWatchlistData(data) {
     console.error('Error writing watchlist data:', error);
     return false;
   }
+}
+
+// Initialize theses.json if it doesn't exist
+async function initializeThesesFile() {
+  try {
+    await fs.access(THESES_FILE);
+  } catch (error) {
+    // File doesn't exist, create it with empty structure
+    const initialData = [];
+    await fs.writeFile(THESES_FILE, JSON.stringify(initialData, null, 2));
+    console.log('Created theses.json with initial structure');
+  }
+}
+
+// Read theses data
+async function readThesesData() {
+  try {
+    const data = await fs.readFile(THESES_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading theses data:', error);
+    return [];
+  }
+}
+
+// Write theses data
+async function writeThesesData(data) {
+  try {
+    await fs.writeFile(THESES_FILE, JSON.stringify(data, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing theses data:', error);
+    return false;
+  }
+}
+
+// Generate UUID
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// Simple TF-IDF similarity scoring (fallback when embeddings not available)
+function calculateSimilarity(text1, text2) {
+  // Simple word overlap scoring
+  const words1 = text1.toLowerCase().split(/\s+/).filter(word => word.length > 2);
+  const words2 = text2.toLowerCase().split(/\s+/).filter(word => word.length > 2);
+  
+  const set1 = new Set(words1);
+  const set2 = new Set(words2);
+  
+  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+  
+  if (union.size === 0) return 0;
+  
+  return intersection.size / union.size;
 }
 
 // API Routes
@@ -450,6 +513,10 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
   try {
     const { query, limit = '10', start_year, end_year, offset = '0', jurisdiction } = req.query;
     
+    // Check if there's a starred thesis for alignment scoring
+    const theses = await readThesesData();
+    const starredThesis = theses.find(thesis => thesis.starred);
+    
     if (!SERPAPI_KEY || SERPAPI_KEY === 'your_serpapi_key_here') {
       // Provide realistic fallback data for testing
       console.log('SerpAPI key not configured, using fallback data for testing');
@@ -498,8 +565,17 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
         }
       ];
 
+      // Add alignment scores if there's a starred thesis
+      let patentsWithAlignment = fallbackPatents;
+      if (starredThesis) {
+        patentsWithAlignment = fallbackPatents.map(patent => ({
+          ...patent,
+          alignment_score: calculateSimilarity(patent.abstract, starredThesis.content)
+        }));
+      }
+
       // Filter by year range if provided
-      let filteredPatents = fallbackPatents;
+      let filteredPatents = patentsWithAlignment;
       if (start_year && end_year) {
         filteredPatents = filteredPatents.filter(patent => 
           patent.year >= parseInt(start_year) && patent.year <= parseInt(end_year)
@@ -522,6 +598,8 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
         total: filteredPatents.length,
         query: query,
         limit: parseInt(limit),
+        hasMore: startIndex + parseInt(limit) < filteredPatents.length,
+        starred_thesis: starredThesis ? { id: starredThesis.id, title: starredThesis.title } : null,
         message: 'Using fallback data - set SERPAPI_KEY for real results'
       });
     }
@@ -626,8 +704,17 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       };
     });
 
+    // Add alignment scores if there's a starred thesis
+    let patentsWithAlignment = patents;
+    if (starredThesis) {
+      patentsWithAlignment = patents.map(patent => ({
+        ...patent,
+        alignment_score: calculateSimilarity(patent.abstract, starredThesis.content)
+      }));
+    }
+
     // No filtering - return patents as-is, already sorted by relevance and recency
-    const filteredPatents = patents;
+    const filteredPatents = patentsWithAlignment;
 
     // Apply offset and limit for proper pagination
     const startIndex = parseInt(offset);
@@ -642,18 +729,8 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       query: query,
       limit: parseInt(limit),
       offset: parseInt(offset),
-      hasMore: endIndex < filteredPatents.length
-    });
-
-    console.log(`Found ${patents.length} patents, filtered to ${filteredPatents.length}, returning ${limitedPatents.length} after pagination`);
-
-    res.json({
-      results: limitedPatents,
-      total: filteredPatents.length,
-      query: query,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
       hasMore: endIndex < filteredPatents.length,
+      starred_thesis: starredThesis ? { id: starredThesis.id, title: starredThesis.title } : null,
       serpapi_info: {
         total_results: serpResponse.data.search_information?.total_results,
         time_taken: serpResponse.data.search_information?.time_taken_displayed
@@ -845,13 +922,210 @@ app.get('/api/test-file-ops', async (req, res) => {
   }
 });
 
+// Thesis API Endpoints
+
+// GET /api/theses - List all theses
+app.get('/api/theses', async (req, res) => {
+  try {
+    const theses = await readThesesData();
+    res.json(theses);
+  } catch (error) {
+    console.error('Error fetching theses:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch theses' });
+  }
+});
+
+// POST /api/theses - Add new thesis
+app.post('/api/theses', async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    
+    if (!title || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: title, content' 
+      });
+    }
+
+    const theses = await readThesesData();
+    
+    const newThesis = {
+      id: generateUUID(),
+      title: title.trim(),
+      content: content.trim(),
+      starred: false,
+      created_at: new Date().toISOString()
+    };
+
+    theses.push(newThesis);
+    
+    const success = await writeThesesData(theses);
+    
+    if (success) {
+      res.json({ 
+        success: true, 
+        data: newThesis 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to save thesis' 
+      });
+    }
+  } catch (error) {
+    console.error('Error creating thesis:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to create thesis' 
+    });
+  }
+});
+
+// PUT /api/theses/:id - Update thesis
+app.put('/api/theses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content } = req.body;
+    
+    if (!title || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: title, content' 
+      });
+    }
+
+    const theses = await readThesesData();
+    const thesisIndex = theses.findIndex(thesis => thesis.id === id);
+    
+    if (thesisIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Thesis not found' 
+      });
+    }
+
+    theses[thesisIndex] = {
+      ...theses[thesisIndex],
+      title: title.trim(),
+      content: content.trim()
+    };
+    
+    const success = await writeThesesData(theses);
+    
+    if (success) {
+      res.json({ 
+        success: true, 
+        data: theses[thesisIndex] 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to update thesis' 
+      });
+    }
+  } catch (error) {
+    console.error('Error updating thesis:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update thesis' 
+    });
+  }
+});
+
+// DELETE /api/theses/:id - Delete thesis
+app.delete('/api/theses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const theses = await readThesesData();
+    
+    const thesisIndex = theses.findIndex(thesis => thesis.id === id);
+    if (thesisIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Thesis not found' 
+      });
+    }
+    
+    theses.splice(thesisIndex, 1);
+    await writeThesesData(theses);
+    
+    res.json({ success: true, message: 'Thesis deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting thesis:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to delete thesis' 
+    });
+  }
+});
+
+// POST /api/theses/:id/star - Star thesis (unstar others)
+app.post('/api/theses/:id/star', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const theses = await readThesesData();
+    
+    const thesisIndex = theses.findIndex(thesis => thesis.id === id);
+    if (thesisIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Thesis not found' 
+      });
+    }
+    
+    // Unstar all theses first
+    theses.forEach(thesis => {
+      thesis.starred = false;
+    });
+    
+    // Star the selected thesis
+    theses[thesisIndex].starred = true;
+    
+    await writeThesesData(theses);
+    
+    res.json({ 
+      success: true, 
+      data: theses[thesisIndex],
+      message: 'Thesis starred successfully' 
+    });
+  } catch (error) {
+    console.error('Error starring thesis:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to star thesis' 
+    });
+  }
+});
+
+// GET /api/theses/starred - Get starred thesis
+app.get('/api/theses/starred', async (req, res) => {
+  try {
+    const theses = await readThesesData();
+    const starredThesis = theses.find(thesis => thesis.starred);
+    
+    res.json({ 
+      success: true, 
+      data: starredThesis || null 
+    });
+  } catch (error) {
+    console.error('Error fetching starred thesis:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch starred thesis' 
+    });
+  }
+});
+
 // Initialize the watchlist file on startup
 initializeWatchlistFile().then(() => {
+  return initializeThesesFile();
+}).then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Watchlist file: ${WATCHLIST_FILE}`);
+    console.log(`Theses file: ${THESES_FILE}`);
   });
 }).catch(error => {
-  console.error('Failed to initialize watchlist file:', error);
+  console.error('Failed to initialize files:', error);
   process.exit(1);
 });
