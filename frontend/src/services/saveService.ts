@@ -420,7 +420,8 @@ class SaveService {
     console.log('SaveService: Headers being sent:', headers);
     
     try {
-      const response = await fetch(`${this.baseUrl}/watchlist`, {
+      // Send email as both header AND query parameter for maximum compatibility
+      const response = await fetch(`${this.baseUrl}/watchlist?email=${userEmail}`, {
         headers: headers
       });
       

@@ -206,12 +206,18 @@ async function saveUserData(userId, data) {
 
 // Authentication middleware
 async function authenticateUser(req, res, next) {
-  const { email } = req.headers;
+  let email = req.headers.email;
   console.log('Backend: authenticateUser called with email header:', email);
   console.log('Backend: All headers received:', Object.keys(req.headers));
   
+  // If no email in header, try query parameter as fallback
   if (!email) {
-    console.log('Backend: No email header found, returning 401');
+    email = req.query.email;
+    console.log('Backend: No email header, trying query param:', email);
+  }
+  
+  if (!email) {
+    console.log('Backend: No email found anywhere, returning 401');
     return res.status(401).json({ error: 'Email required' });
   }
   
