@@ -31,7 +31,7 @@ class ThesisService {
   async getTheses(): Promise<Thesis[]> {
     try {
       const response = await fetch(`${this.baseUrl}/theses`, {
-        headers: { 'email': localStorage.getItem('userEmail') || '' }
+        headers: this.getHeaders()
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -92,7 +92,7 @@ class ThesisService {
     try {
       const response = await fetch(`${this.baseUrl}/theses/${id}`, {
         method: 'DELETE',
-        headers: { 'email': localStorage.getItem('userEmail') || '' }
+        headers: this.getHeaders()
       });
 
       const result = await response.json();
@@ -133,7 +133,7 @@ class ThesisService {
   async getStarredThesis(): Promise<{ success: boolean; data?: Thesis; error?: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/theses/starred`, {
-        headers: { 'email': localStorage.getItem('userEmail') || '' }
+        headers: this.getHeaders()
       });
       const result = await response.json();
       

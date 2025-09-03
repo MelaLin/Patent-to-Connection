@@ -25,6 +25,7 @@ const Watchlist = () => {
 
   // Load watchlist data
   useEffect(() => {
+    console.log('Watchlist component mounted, loading data...');
     loadWatchlist();
   }, []);
 
@@ -34,6 +35,7 @@ const Watchlist = () => {
       console.log('Loading watchlist...');
       const data = await saveService.getWatchlist();
       console.log('Watchlist data received:', data);
+      console.log('Setting watchlist data with:', { patents: data.patents?.length || 0, queries: data.queries?.length || 0, inventors: data.inventors?.length || 0 });
       setWatchlistData(data);
     } catch (error) {
       console.error('Failed to load watchlist:', error);
