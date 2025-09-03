@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PatentCard } from "@/components/PatentCard";
 import { PatentDrawer } from "@/components/PatentDrawer";
-import { Trash2, Search, Plus, Linkedin } from "lucide-react";
+import { Trash2, Search, Plus, Linkedin, Bookmark } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveService, WatchlistData, SavedPatent, SavedQuery } from "@/services/saveService";
 import { Input } from "@/components/ui/input";
@@ -324,7 +324,7 @@ const Watchlist = () => {
         <Card className="patent-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
+              <Bookmark className="h-5 w-5" />
               Saved Patents
             </CardTitle>
             <CardDescription>

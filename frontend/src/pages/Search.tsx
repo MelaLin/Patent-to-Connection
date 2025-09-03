@@ -150,7 +150,8 @@ const Search = () => {
   const loadMorePatents = async () => {
     if (!currentSearchQuery.trim() || loading) return;
     
-    const newOffset = currentOffset + 10;
+    const newOffset = patents.length; // Use current patents length as offset
+    console.log(`Loading more patents with offset: ${newOffset}`);
     await searchPatents(currentSearchQuery, newOffset);
   };
 

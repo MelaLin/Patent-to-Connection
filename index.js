@@ -532,7 +532,7 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       engine: 'google_patents',
       q: query,
       num: Math.min(parseInt(limit), 100), // SerpAPI max is 100
-      start: parseInt(offset)
+      start: parseInt(offset) + 1 // SerpAPI uses 1-based indexing
     };
 
     // Add date filters if provided
