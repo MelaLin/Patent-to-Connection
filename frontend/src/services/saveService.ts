@@ -396,7 +396,9 @@ class SaveService {
     console.log('Fetching watchlist from:', `${this.baseUrl}/watchlist`);
     
     try {
-      const response = await fetch(`${this.baseUrl}/watchlist`);
+      const response = await fetch(`${this.baseUrl}/watchlist`, {
+        headers: this.getHeaders()
+      });
       
       console.log('Watchlist response status:', response.status);
       
@@ -420,9 +422,7 @@ class SaveService {
     try {
       const response = await fetch(`${this.baseUrl}/watchlist/patents/${patentId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
       });
 
       if (!response.ok) {
@@ -455,9 +455,7 @@ class SaveService {
     try {
       const response = await fetch(`${this.baseUrl}/watchlist/queries/${queryId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
       });
 
       if (!response.ok) {
@@ -490,9 +488,7 @@ class SaveService {
     try {
       const response = await fetch(`${this.baseUrl}/watchlist/inventors/${inventorId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
       });
 
       if (!response.ok) {
