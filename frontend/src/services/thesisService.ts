@@ -20,10 +20,30 @@ class ThesisService {
   private baseUrl = 'https://patent-forge-backend.onrender.com/api';
 
   private getHeaders() {
-    const userEmail = localStorage.getItem('userEmail');
+    // Get email from multiple sources for maximum reliability
+    let userEmail: string | null = null;
+    
+    // Try localStorage first
+    userEmail = localStorage.getItem('userEmail');
+    console.log('ThesisService: Email from localStorage:', userEmail);
+    
+    // Try sessionStorage if localStorage is empty
+    if (!userEmail) {
+      userEmail = sessionStorage.getItem('userEmail');
+      console.log('ThesisService: Email from sessionStorage:', userEmail);
+    }
+    
+    // If still no email, this is a critical error
+    if (!userEmail) {
+      console.error('ThesisService: CRITICAL ERROR - No user email found in storage!');
+      throw new Error('User email not found. Please log in again.');
+    }
+    
+    console.log('ThesisService: Using email for request:', userEmail);
+    
     return {
       'Content-Type': 'application/json',
-      'email': userEmail || ''
+      'email': userEmail
     };
   }
 

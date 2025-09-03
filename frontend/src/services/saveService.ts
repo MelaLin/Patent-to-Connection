@@ -58,23 +58,31 @@ export interface WatchlistData {
 class SaveService {
   private baseUrl = 'https://patent-forge-backend.onrender.com/api';
 
-  private getHeaders() {
-    // Try localStorage first, then sessionStorage as fallback
-    let userEmail = localStorage.getItem('userEmail');
-    console.log('SaveService: Getting headers, userEmail from localStorage:', userEmail);
+  private getHeaders(): { 'Content-Type': string; 'email': string } {
+    // Get email from multiple sources for maximum reliability
+    let userEmail: string | null = null;
     
+    // Try localStorage first
+    userEmail = localStorage.getItem('userEmail');
+    console.log('SaveService: Email from localStorage:', userEmail);
+    
+    // Try sessionStorage if localStorage is empty
     if (!userEmail) {
       userEmail = sessionStorage.getItem('userEmail');
-      console.log('SaveService: Getting headers, userEmail from sessionStorage:', userEmail);
+      console.log('SaveService: Email from sessionStorage:', userEmail);
     }
     
-    console.log('SaveService: Final userEmail being used:', userEmail);
-    console.log('SaveService: All localStorage keys:', Object.keys(localStorage));
-    console.log('SaveService: All sessionStorage keys:', Object.keys(sessionStorage));
+    // If still no email, this is a critical error
+    if (!userEmail) {
+      console.error('SaveService: CRITICAL ERROR - No user email found in storage!');
+      throw new Error('User email not found. Please log in again.');
+    }
+    
+    console.log('SaveService: Using email for request:', userEmail);
     
     return {
       'Content-Type': 'application/json',
-      'email': userEmail || ''
+      'email': userEmail
     };
   }
 
@@ -408,20 +416,11 @@ class SaveService {
   async getWatchlist(): Promise<WatchlistData> {
     console.log('SaveService: Fetching watchlist from:', `${this.baseUrl}/watchlist`);
     
-    // Force the email to be sent - bypass localStorage issues
-    const userEmail = 'melalin@stanford.edu'; // Hardcoded for now to fix the issue
-    console.log('SaveService: Using hardcoded email:', userEmail);
-    
-    const headers = {
-      'Content-Type': 'application/json',
-      'email': userEmail
-    };
-    
-    console.log('SaveService: Headers being sent:', headers);
-    
     try {
-      // Send email as both header AND query parameter for maximum compatibility
-      const response = await fetch(`${this.baseUrl}/watchlist?email=${userEmail}`, {
+      const headers = this.getHeaders();
+      console.log('SaveService: Headers being sent:', headers);
+      
+      const response = await fetch(`${this.baseUrl}/watchlist`, {
         headers: headers
       });
       

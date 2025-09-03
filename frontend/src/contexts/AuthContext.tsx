@@ -6,6 +6,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string) => Promise<boolean>;
   logout: () => void;
+  getCurrentUserEmail: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,12 +36,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    console.log('AuthContext: Logout called');
     authService.logout();
     setUser(null);
   };
 
+  const getCurrentUserEmail = (): string | null => {
+    return user?.email || localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, getCurrentUserEmail }}>
       {children}
     </AuthContext.Provider>
   );
