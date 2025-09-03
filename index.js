@@ -65,10 +65,33 @@ async function initializeThesesFile() {
   try {
     await fs.access(THESES_FILE);
   } catch (error) {
-    // File doesn't exist, create it with empty structure
-    const initialData = [];
-    await fs.writeFile(THESES_FILE, JSON.stringify(initialData, null, 2));
-    console.log('Created theses.json with initial structure');
+    // File doesn't exist, create it with sample data
+    const sampleTheses = [
+      {
+        id: generateUUID(),
+        title: "Solar Energy Innovation",
+        content: "We are looking for innovative solar energy technologies including photovoltaic panels, solar modules, energy storage systems, and renewable energy solutions. Focus areas include solar panel efficiency, building-integrated photovoltaics, solar tracking systems, and grid integration technologies.",
+        starred: false,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: generateUUID(),
+        title: "AI in Healthcare",
+        content: "Seeking artificial intelligence and machine learning applications in healthcare, including diagnostic tools, medical imaging, drug discovery, patient monitoring systems, and healthcare automation. Areas of interest include AI-powered medical devices, predictive analytics, and digital health platforms.",
+        starred: false,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: generateUUID(),
+        title: "Hydrogen Supply Chain",
+        content: "Investing in hydrogen production, storage, transportation, and distribution technologies. Looking for innovations in green hydrogen production, fuel cell technology, hydrogen storage solutions, and infrastructure development for hydrogen economy.",
+        starred: false,
+        created_at: new Date().toISOString()
+      }
+    ];
+    
+    await fs.writeFile(THESES_FILE, JSON.stringify(sampleTheses, null, 2));
+    console.log('Created theses.json with sample data');
   }
 }
 
@@ -103,21 +126,82 @@ function generateUUID() {
   });
 }
 
-// Simple TF-IDF similarity scoring (fallback when embeddings not available)
+// Enhanced similarity scoring with better algorithm
 function calculateSimilarity(text1, text2) {
-  // Simple word overlap scoring
-  const words1 = text1.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-  const words2 = text2.toLowerCase().split(/\s+/).filter(word => word.length > 2);
+  // Clean and normalize texts
+  const cleanText1 = text1.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const cleanText2 = text2.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
   
+  // Split into words and filter out common stop words
+  const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them']);
+  
+  const words1 = cleanText1.split(/\s+/).filter(word => word.length > 2 && !stopWords.has(word));
+  const words2 = cleanText2.split(/\s+/).filter(word => word.length > 2 && !stopWords.has(word));
+  
+  if (words1.length === 0 || words2.length === 0) return 0;
+  
+  // Create word frequency maps
+  const freq1 = {};
+  const freq2 = {};
+  
+  words1.forEach(word => freq1[word] = (freq1[word] || 0) + 1);
+  words2.forEach(word => freq2[word] = (freq2[word] || 0) + 1);
+  
+  // Calculate different similarity metrics
+  
+  // 1. Exact word overlap (Jaccard similarity)
   const set1 = new Set(words1);
   const set2 = new Set(words2);
-  
   const intersection = new Set([...set1].filter(x => set2.has(x)));
   const union = new Set([...set1, ...set2]);
+  const jaccardSimilarity = union.size > 0 ? intersection.size / union.size : 0;
   
-  if (union.size === 0) return 0;
+  // 2. Weighted word overlap (considering frequency)
+  let weightedOverlap = 0;
+  let totalWeight = 0;
   
-  return intersection.size / union.size;
+  Object.keys(freq1).forEach(word => {
+    if (freq2[word]) {
+      const weight = Math.min(freq1[word], freq2[word]);
+      weightedOverlap += weight;
+    }
+    totalWeight += freq1[word];
+  });
+  
+  const weightedSimilarity = totalWeight > 0 ? weightedOverlap / totalWeight : 0;
+  
+  // 3. Keyword importance scoring
+  const importantKeywords = ['solar', 'photovoltaic', 'panel', 'module', 'energy', 'power', 'electric', 'battery', 'storage', 'grid', 'renewable', 'clean', 'green', 'efficiency', 'system', 'device', 'method', 'apparatus', 'technology', 'innovation'];
+  
+  let keywordScore = 0;
+  const thesisWords = new Set(words2);
+  const patentWords = new Set(words1);
+  
+  importantKeywords.forEach(keyword => {
+    if (thesisWords.has(keyword) && patentWords.has(keyword)) {
+      keywordScore += 0.1; // High weight for matching important keywords
+    }
+  });
+  
+  // 4. Length similarity (shorter texts get slight boost)
+  const lengthRatio = Math.min(words1.length, words2.length) / Math.max(words1.length, words2.length);
+  
+  // Combine all metrics with weights
+  const finalScore = (
+    jaccardSimilarity * 0.3 +
+    weightedSimilarity * 0.4 +
+    keywordScore * 0.2 +
+    lengthRatio * 0.1
+  );
+  
+  // Apply score inflation to make results more meaningful
+  // Use a sigmoid-like function to boost scores
+  const inflatedScore = Math.min(1, finalScore * 3 + Math.pow(finalScore, 2));
+  
+  // Ensure minimum score for any match
+  const minScore = finalScore > 0 ? 0.15 : 0;
+  
+  return Math.max(minScore, inflatedScore);
 }
 
 // API Routes
