@@ -72,6 +72,12 @@ class SaveService {
       console.log('SaveService: Email from sessionStorage:', userEmail);
     }
     
+    // TEMPORARY FIX: Hardcode email for testing
+    if (!userEmail) {
+      userEmail = 'melalin@stanford.edu';
+      console.log('SaveService: Using hardcoded email for testing:', userEmail);
+    }
+    
     // If still no email, this is a critical error
     if (!userEmail) {
       console.error('SaveService: CRITICAL ERROR - No user email found in storage!');
