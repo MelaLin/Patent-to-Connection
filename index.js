@@ -29,10 +29,11 @@ function getUserSerpAPIKey(userEmail) {
   // Map user emails to environment variable names
   const keyMapping = {
     'melalin@stanford.edu': process.env.SERPAPI_KEY_MELA1,
-    'melalin05@gmail.com': process.env.SERPAPI_KEY_MELA2,
+    'melalin05@gmail.com': process.env.SERPAPI_KEY_MELATEST,
     // Add more users as needed
   };
   
+  console.log(`Getting SerpAPI key for ${userEmail}: ${keyMapping[userEmail] ? 'Key found' : 'Key missing'}`);
   return keyMapping[userEmail] || process.env.SERPAPI_KEY_DEFAULT;
 }
 
@@ -138,7 +139,7 @@ async function initializeUserSystem() {
           {
             id: "550e8400-e29b-41d4-a716-446655440002",
             email: "melalin05@gmail.com",
-            name: "Mela Lin 2",
+            name: "Mela Lin TEST",
             created_at: "2024-01-15T10:30:00.000Z",
             is_active: true
           }
