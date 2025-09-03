@@ -23,10 +23,8 @@ const SERPAPI_BASE_URL = 'https://serpapi.com/search.json';
 function getUserSerpAPIKey(userEmail) {
   // Map user emails to environment variable names
   const keyMapping = {
-    'john@yourvc.com': process.env.SERPAPI_KEY_JOHN,
-    'sarah@yourvc.com': process.env.SERPAPI_KEY_SARAH,
-    'mike@yourvc.com': process.env.SERPAPI_KEY_MIKE,
-    'alice@yourvc.com': process.env.SERPAPI_KEY_ALICE,
+    'melalin@stanford.edu': process.env.SERPAPI_KEY_MELA1,
+    'melalin05@gmail.com': process.env.SERPAPI_KEY_MELA2,
     // Add more users as needed
   };
   
@@ -111,41 +109,63 @@ async function initializeUserSystem() {
   try {
     await fs.mkdir(USER_DATA_DIR, { recursive: true });
     
-    // Only create users.json if it doesn't exist
+    // Check if users.json exists and has the correct users
     try {
       await fs.access(USERS_FILE);
-      console.log('users.json already exists, skipping initialization');
+      const existingUsers = JSON.parse(await fs.readFile(USERS_FILE, 'utf8'));
+      
+      // Check if the current users are in the file
+      const currentUsers = ['melalin@stanford.edu', 'melalin05@gmail.com'];
+      const hasCurrentUsers = currentUsers.every(email => 
+        existingUsers.some(user => user.email === email)
+      );
+      
+      if (!hasCurrentUsers) {
+        console.log('Updating users.json with current user list');
+        const updatedUsers = [
+          {
+            id: "550e8400-e29b-41d4-a716-446655440001",
+            email: "melalin@stanford.edu",
+            name: "Mela Lin 1",
+            created_at: "2024-01-15T10:30:00.000Z",
+            is_active: true
+          },
+          {
+            id: "550e8400-e29b-41d4-a716-446655440002",
+            email: "melalin05@gmail.com",
+            name: "Mela Lin 2",
+            created_at: "2024-01-15T10:30:00.000Z",
+            is_active: true
+          }
+        ];
+        
+        await fs.writeFile(USERS_FILE, JSON.stringify(updatedUsers, null, 2));
+        console.log('users.json updated with current users');
+      } else {
+        console.log('users.json already has current users, skipping update');
+      }
     } catch (error) {
-      // File doesn't exist, create it with placeholder data
-      const teamUsers = [
+      // File doesn't exist, create it with current user data
+      console.log('Creating users.json with current user data');
+      const currentUsers = [
         {
-          id: generateUUID(),
-          email: 'partner1@yourvc.com',
-          name: 'Partner 1',
-          serpapi_key: 'YOUR_SERPAPI_KEY_1',
-          created_at: new Date().toISOString(),
+          id: "550e8400-e29b-41d4-a716-446655440001",
+          email: "melalin@stanford.edu",
+          name: "Mela Lin 1",
+          created_at: "2024-01-15T10:30:00.000Z",
           is_active: true
         },
         {
-          id: generateUUID(),
-          email: 'partner2@yourvc.com', 
-          name: 'Partner 2',
-          serpapi_key: 'YOUR_SERPAPI_KEY_2',
-          created_at: new Date().toISOString(),
-          is_active: true
-        },
-        {
-          id: generateUUID(),
-          email: 'partner3@yourvc.com',
-          name: 'Partner 3', 
-          serpapi_key: 'YOUR_SERPAPI_KEY_3',
-          created_at: new Date().toISOString(),
+          id: "550e8400-e29b-41d4-a716-446655440002",
+          email: "melalin05@gmail.com",
+          name: "Mela Lin 2",
+          created_at: "2024-01-15T10:30:00.000Z",
           is_active: true
         }
       ];
       
-      await fs.writeFile(USERS_FILE, JSON.stringify(teamUsers, null, 2));
-      console.log('Multi-tenant system initialized with placeholder data');
+      await fs.writeFile(USERS_FILE, JSON.stringify(currentUsers, null, 2));
+      console.log('Multi-tenant system initialized with current user data');
     }
   } catch (error) {
     console.error('Error initializing user system:', error);
