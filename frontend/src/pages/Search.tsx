@@ -43,10 +43,6 @@ const Search = () => {
   const [isSavingQuery, setIsSavingQuery] = useState(false);
   const [currentOffset, setCurrentOffset] = useState(0);
   const [hasMoreResults, setHasMoreResults] = useState(true);
-  const [currentFilters, setCurrentFilters] = useState<Filters>({
-    yearRange: [2020, 2024],
-    jurisdiction: "any"
-  });
   const { toast } = useToast();
   const location = useLocation();
 
@@ -75,27 +71,14 @@ const Search = () => {
     setCurrentOffset(offset);
 
     try {
-      console.log(`Searching for: ${query} with filters:`, currentFilters);
+      console.log(`Searching for: ${query}`);
       
-      // Build URL with query parameters
+      // Build URL with query parameters - no filters, just relevance and recency
       const params = new URLSearchParams({
         query: query,
         limit: '10',
         offset: offset.toString()
       });
-      
-      // Add year range filters if they differ from default
-      if (currentFilters.yearRange[0] !== 2020 || currentFilters.yearRange[1] !== 2024) {
-        params.append('start_year', currentFilters.yearRange[0].toString());
-        params.append('end_year', currentFilters.yearRange[1].toString());
-        console.log(`Adding year filter: ${currentFilters.yearRange[0]} - ${currentFilters.yearRange[1]}`);
-      }
-      
-      // Add jurisdiction filter if not "any"
-      if (currentFilters.jurisdiction !== "any") {
-        params.append('jurisdiction', currentFilters.jurisdiction);
-        console.log(`Adding jurisdiction filter: ${currentFilters.jurisdiction}`);
-      }
       
       const response = await fetch(`https://patent-forge-backend.onrender.com/api/patents/search/serpapi?${params.toString()}`);
       
@@ -123,7 +106,7 @@ const Search = () => {
         }
         
         // Check if there are more results
-        // If we got exactly 10 results, there are likely more
+        // Always show button if we got 10 results (indicating more are available)
         const hasMore = sortedPatents.length === 10;
         setHasMoreResults(hasMore);
         console.log(`Pagination debug: ${sortedPatents.length} results, total: ${data.total}, offset: ${offset}, hasMore: ${hasMore}`);
@@ -155,16 +138,6 @@ const Search = () => {
     await searchPatents(currentSearchQuery, newOffset);
   };
 
-  const handleFiltersChange = (filters: Filters) => {
-    console.log('Filters changed:', filters);
-    setCurrentFilters(filters);
-    // If we have a current search query, re-run the search with new filters
-    if (currentSearchQuery.trim()) {
-      console.log('Re-running search with new filters');
-      searchPatents(currentSearchQuery);
-    }
-  };
-
   const handleSaveQuery = async () => {
     if (!currentSearchQuery.trim()) return;
     
@@ -172,11 +145,7 @@ const Search = () => {
     try {
       const queryData = {
         query: currentSearchQuery.trim(),
-        filters: {
-          yearFrom: currentFilters.yearRange[0],
-          yearTo: currentFilters.yearRange[1],
-          jurisdiction: currentFilters.jurisdiction
-        }
+        filters: {} // No filters - focusing on relevance and recency
       };
 
       const result = await saveService.saveQuery(queryData);
@@ -327,7 +296,7 @@ const Search = () => {
         {/* Search and filters */}
         <div className="space-y-4">
           <SearchBar onSearch={searchPatents} loading={loading} />
-          <FilterBar onFiltersChange={handleFiltersChange} />
+          {/* Filters removed - focusing on relevance and recency */}
         </div>
 
         {/* Results */}

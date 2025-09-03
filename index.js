@@ -526,13 +526,14 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       });
     }
 
-    // Build SerpAPI parameters
+    // Build SerpAPI parameters - prioritize recent, relevant patents
     const serpApiParams = {
       api_key: SERPAPI_KEY,
       engine: 'google_patents',
       q: query,
       num: Math.min(parseInt(limit), 100), // SerpAPI max is 100
-      start: parseInt(offset) + 1 // SerpAPI uses 1-based indexing
+      start: parseInt(offset) + 1, // SerpAPI uses 1-based indexing
+      sort_by: 'date' // Sort by date to get most recent patents first
     };
 
     // Add date filters if provided
@@ -562,7 +563,7 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       });
     }
 
-    // Transform SerpAPI response to our format
+    // Transform SerpAPI response to our format - no filtering, just relevance and recency
     const patents = serpResponse.data.organic_results.map(patent => {
       // Extract patent ID from the patent_id field (e.g., "patent/US11622404B2/en")
       let patentId = patent.patent_id;
@@ -626,23 +627,8 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       };
     });
 
-    // Filter by year range if provided (client-side filtering)
-    let filteredPatents = patents;
-    if (start_year && end_year) {
-      filteredPatents = filteredPatents.filter(patent => 
-        patent.year && patent.year >= parseInt(start_year) && patent.year <= parseInt(end_year)
-      );
-    }
-
-    // Filter by jurisdiction if provided
-    if (jurisdiction && jurisdiction !== 'any') {
-      console.log(`Filtering by jurisdiction: ${jurisdiction}`);
-      const beforeFilter = filteredPatents.length;
-      filteredPatents = filteredPatents.filter(patent => 
-        patent.jurisdiction === jurisdiction
-      );
-      console.log(`Jurisdiction filter: ${beforeFilter} -> ${filteredPatents.length} patents`);
-    }
+    // No filtering - return patents as-is, already sorted by relevance and recency
+    const filteredPatents = patents;
 
     // Apply offset and limit
     const startIndex = parseInt(offset);
