@@ -70,7 +70,8 @@ class SaveService {
 
   // Save a patent
   async savePatent(patentData: PatentSaveData): Promise<{ success: boolean; data?: SavedPatent; error?: string }> {
-    console.log('Sending patent data:', patentData);
+    console.log('SaveService: Saving patent:', patentData.title);
+    console.log('SaveService: Current userEmail from localStorage:', localStorage.getItem('userEmail'));
     
     try {
       const response = await fetch(`${this.baseUrl}/watchlist/patents`, {
@@ -79,11 +80,11 @@ class SaveService {
         body: JSON.stringify(patentData),
       });
 
-      console.log('Response status:', response.status);
+      console.log('SaveService: Save patent response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error response:', errorText);
+        console.error('SaveService: Error response:', errorText);
         
         let errorDetail = 'Failed to save patent';
         try {
@@ -97,7 +98,7 @@ class SaveService {
       }
 
       const result = await response.json();
-      console.log('Save patent result:', result);
+      console.log('SaveService: Save patent result:', result);
       return result;
     } catch (error) {
       console.error('Network error saving patent:', error);
