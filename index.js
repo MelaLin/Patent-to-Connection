@@ -26,6 +26,7 @@ function getUserSerpAPIKey(userEmail) {
     'john@yourvc.com': process.env.SERPAPI_KEY_JOHN,
     'sarah@yourvc.com': process.env.SERPAPI_KEY_SARAH,
     'mike@yourvc.com': process.env.SERPAPI_KEY_MIKE,
+    'alice@yourvc.com': process.env.SERPAPI_KEY_ALICE,
     // Add more users as needed
   };
   
