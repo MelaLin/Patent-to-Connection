@@ -10,10 +10,28 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:3000', 'https://patentforge-pcxichiix-melalins-projects.vercel.app', 'https://patentforge-4hyf4ouu8-melalins-projects.vercel.app', 'https://patentforge-sigma.vercel.app'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:8080', 
+      'http://localhost:3000', 
+      'https://patentforge-pcxichiix-melalins-projects.vercel.app', 
+      'https://patentforge-4hyf4ouu8-melalins-projects.vercel.app', 
+      'https://patentforge-sigma.vercel.app'
+    ];
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS: Blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'email', 'Authorization']
+  allowedHeaders: ['Content-Type', 'email', 'Authorization', 'Origin', 'Accept']
 }));
 
 // Add CORS debugging middleware
