@@ -59,10 +59,19 @@ class SaveService {
   private baseUrl = 'https://patent-forge-backend.onrender.com/api';
 
   private getHeaders() {
-    const userEmail = localStorage.getItem('userEmail');
+    // Try localStorage first, then sessionStorage as fallback
+    let userEmail = localStorage.getItem('userEmail');
     console.log('SaveService: Getting headers, userEmail from localStorage:', userEmail);
-    console.log('SaveService: localStorage contents:', { userEmail: localStorage.getItem('userEmail') });
+    
+    if (!userEmail) {
+      userEmail = sessionStorage.getItem('userEmail');
+      console.log('SaveService: Getting headers, userEmail from sessionStorage:', userEmail);
+    }
+    
+    console.log('SaveService: Final userEmail being used:', userEmail);
     console.log('SaveService: All localStorage keys:', Object.keys(localStorage));
+    console.log('SaveService: All sessionStorage keys:', Object.keys(sessionStorage));
+    
     return {
       'Content-Type': 'application/json',
       'email': userEmail || ''

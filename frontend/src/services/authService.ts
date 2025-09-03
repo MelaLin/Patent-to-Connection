@@ -20,8 +20,29 @@ class AuthService {
       if (response.ok) {
         this.currentUser = await response.json();
         console.log('AuthService: Login successful, user:', this.currentUser);
-        localStorage.setItem('userEmail', email);
-        console.log('AuthService: Stored userEmail in localStorage:', email);
+        
+        // Store email in localStorage with multiple fallbacks
+        try {
+          localStorage.setItem('userEmail', email);
+          console.log('AuthService: Stored userEmail in localStorage:', email);
+          
+          // Verify it was stored correctly
+          const storedEmail = localStorage.getItem('userEmail');
+          console.log('AuthService: Verified stored email:', storedEmail);
+          
+          if (storedEmail !== email) {
+            console.error('AuthService: Email storage verification failed!');
+            // Try alternative storage method
+            sessionStorage.setItem('userEmail', email);
+            console.log('AuthService: Stored email in sessionStorage as fallback');
+          }
+        } catch (storageError) {
+          console.error('AuthService: localStorage error:', storageError);
+          // Fallback to sessionStorage
+          sessionStorage.setItem('userEmail', email);
+          console.log('AuthService: Used sessionStorage fallback');
+        }
+        
         return this.currentUser;
       }
       console.log('AuthService: Login failed, response not ok');
@@ -47,8 +68,15 @@ class AuthService {
 
   // Auto-login on page load
   async autoLogin(): Promise<User | null> {
-    const savedEmail = localStorage.getItem('userEmail');
+    // Try localStorage first, then sessionStorage as fallback
+    let savedEmail = localStorage.getItem('userEmail');
     console.log('AuthService: Auto-login, savedEmail from localStorage:', savedEmail);
+    
+    if (!savedEmail) {
+      savedEmail = sessionStorage.getItem('userEmail');
+      console.log('AuthService: Auto-login, savedEmail from sessionStorage:', savedEmail);
+    }
+    
     if (savedEmail) {
       console.log('AuthService: Attempting auto-login with saved email');
       return await this.login(savedEmail);
