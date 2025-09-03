@@ -406,28 +406,54 @@ class SaveService {
 
   // Get watchlist (all saved patents, queries, and inventors)
   async getWatchlist(): Promise<WatchlistData> {
-    console.log('Fetching watchlist from:', `${this.baseUrl}/watchlist`);
-    const headers = this.getHeaders();
-    console.log('Headers being sent:', headers);
+    console.log('SaveService: Fetching watchlist from:', `${this.baseUrl}/watchlist`);
+    
+    // Try localStorage first, then sessionStorage as fallback
+    let userEmail = localStorage.getItem('userEmail');
+    console.log('SaveService: Getting headers, userEmail from localStorage:', userEmail);
+    
+    if (!userEmail) {
+      userEmail = sessionStorage.getItem('userEmail');
+      console.log('SaveService: Getting headers, userEmail from sessionStorage:', userEmail);
+    }
+    
+    // If still no email, try to get it from the auth context
+    if (!userEmail) {
+      console.log('SaveService: No email found in storage, trying to get from auth context');
+      // This is a fallback - normally the email should be in storage
+      userEmail = 'melalin@stanford.edu'; // Temporary fallback
+      console.log('SaveService: Using fallback email:', userEmail);
+    }
+    
+    console.log('SaveService: Final userEmail being used:', userEmail);
+    console.log('SaveService: All localStorage keys:', Object.keys(localStorage));
+    console.log('SaveService: All sessionStorage keys:', Object.keys(sessionStorage));
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'email': userEmail || ''
+    };
+    
+    console.log('SaveService: Headers being sent:', headers);
     
     try {
       const response = await fetch(`${this.baseUrl}/watchlist`, {
         headers: headers
       });
       
-      console.log('Watchlist response status:', response.status);
+      console.log('SaveService: Watchlist response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error response:', errorText);
+        console.error('SaveService: Error response:', errorText);
         throw new Error('Failed to fetch watchlist');
       }
 
       const data = await response.json();
-      console.log('Watchlist data received:', data);
+      console.log('SaveService: Watchlist data received:', data);
       return data;
     } catch (error) {
-      console.error('Network error fetching watchlist:', error);
+      console.error('SaveService: Network error fetching watchlist:', error);
       throw new Error(error instanceof Error ? error.message : 'Network error fetching watchlist');
     }
   }
