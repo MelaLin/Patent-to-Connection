@@ -105,9 +105,8 @@ const Search = () => {
           setPatents(prev => [...prev, ...sortedPatents]);
         }
         
-        // Check if there are more results
-        // Always show button if we got 10 results (indicating more are available)
-        const hasMore = sortedPatents.length === 10;
+        // Check if there are more results - use backend's hasMore field
+        const hasMore = data.hasMore || sortedPatents.length === 10;
         setHasMoreResults(hasMore);
         console.log(`Pagination debug: ${sortedPatents.length} results, total: ${data.total}, offset: ${offset}, hasMore: ${hasMore}`);
         

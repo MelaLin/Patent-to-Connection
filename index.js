@@ -526,14 +526,13 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       });
     }
 
-    // Build SerpAPI parameters - prioritize recent, relevant patents
+    // Build SerpAPI parameters - fetch more results upfront for better pagination
     const serpApiParams = {
       api_key: SERPAPI_KEY,
       engine: 'google_patents',
       q: query,
-      num: Math.min(parseInt(limit), 100), // SerpAPI max is 100
-      start: parseInt(offset) + 1, // SerpAPI uses 1-based indexing
-      sort_by: 'date' // Sort by date to get most recent patents first
+      num: 100, // Always fetch 100 results to handle pagination properly
+      start: 1 // Always start from the beginning
     };
 
     // Add date filters if provided
@@ -630,9 +629,21 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
     // No filtering - return patents as-is, already sorted by relevance and recency
     const filteredPatents = patents;
 
-    // Apply offset and limit
+    // Apply offset and limit for proper pagination
     const startIndex = parseInt(offset);
-    const limitedPatents = filteredPatents.slice(startIndex, startIndex + parseInt(limit));
+    const endIndex = startIndex + parseInt(limit);
+    const limitedPatents = filteredPatents.slice(startIndex, endIndex);
+    
+    console.log(`Pagination: ${filteredPatents.length} total patents, showing ${startIndex}-${endIndex}, got ${limitedPatents.length} patents`);
+
+    return res.json({
+      results: limitedPatents,
+      total: filteredPatents.length,
+      query: query,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      hasMore: endIndex < filteredPatents.length
+    });
 
     console.log(`Found ${patents.length} patents, filtered to ${filteredPatents.length}, returning ${limitedPatents.length} after pagination`);
 
@@ -641,6 +652,8 @@ app.get('/api/patents/search/serpapi', async (req, res) => {
       total: filteredPatents.length,
       query: query,
       limit: parseInt(limit),
+      offset: parseInt(offset),
+      hasMore: endIndex < filteredPatents.length,
       serpapi_info: {
         total_results: serpResponse.data.search_information?.total_results,
         time_taken: serpResponse.data.search_information?.time_taken_displayed
