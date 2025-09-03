@@ -97,36 +97,42 @@ async function initializeUserSystem() {
   try {
     await fs.mkdir(USER_DATA_DIR, { recursive: true });
     
-    // Initialize users.json with your team
-    const teamUsers = [
-      {
-        id: generateUUID(),
-        email: 'partner1@yourvc.com',
-        name: 'Partner 1',
-        serpapi_key: 'YOUR_SERPAPI_KEY_1',
-        created_at: new Date().toISOString(),
-        is_active: true
-      },
-      {
-        id: generateUUID(),
-        email: 'partner2@yourvc.com', 
-        name: 'Partner 2',
-        serpapi_key: 'YOUR_SERPAPI_KEY_2',
-        created_at: new Date().toISOString(),
-        is_active: true
-      },
-      {
-        id: generateUUID(),
-        email: 'partner3@yourvc.com',
-        name: 'Partner 3', 
-        serpapi_key: 'YOUR_SERPAPI_KEY_3',
-        created_at: new Date().toISOString(),
-        is_active: true
-      }
-    ];
-    
-    await fs.writeFile(USERS_FILE, JSON.stringify(teamUsers, null, 2));
-    console.log('Multi-tenant system initialized');
+    // Only create users.json if it doesn't exist
+    try {
+      await fs.access(USERS_FILE);
+      console.log('users.json already exists, skipping initialization');
+    } catch (error) {
+      // File doesn't exist, create it with placeholder data
+      const teamUsers = [
+        {
+          id: generateUUID(),
+          email: 'partner1@yourvc.com',
+          name: 'Partner 1',
+          serpapi_key: 'YOUR_SERPAPI_KEY_1',
+          created_at: new Date().toISOString(),
+          is_active: true
+        },
+        {
+          id: generateUUID(),
+          email: 'partner2@yourvc.com', 
+          name: 'Partner 2',
+          serpapi_key: 'YOUR_SERPAPI_KEY_2',
+          created_at: new Date().toISOString(),
+          is_active: true
+        },
+        {
+          id: generateUUID(),
+          email: 'partner3@yourvc.com',
+          name: 'Partner 3', 
+          serpapi_key: 'YOUR_SERPAPI_KEY_3',
+          created_at: new Date().toISOString(),
+          is_active: true
+        }
+      ];
+      
+      await fs.writeFile(USERS_FILE, JSON.stringify(teamUsers, null, 2));
+      console.log('Multi-tenant system initialized with placeholder data');
+    }
   } catch (error) {
     console.error('Error initializing user system:', error);
   }
