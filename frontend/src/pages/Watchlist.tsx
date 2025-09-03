@@ -129,6 +129,31 @@ const Watchlist = () => {
     navigate('/search', { state: { searchQuery: query } });
   };
 
+  // Helper function to extract a single keyword from the search query
+  const extractKeywordFromQuery = (query: string): string => {
+    // Clean the query and get the first meaningful word
+    const cleanQuery = query.toLowerCase().trim();
+    const words = cleanQuery.split(/\s+/).filter(word => word.length > 0);
+    
+    // Return the first word, or a default if no words found
+    return words.length > 0 ? words[0] : "patent";
+  };
+
+  // Helper function to generate LinkedIn search URL with inventor name + keyword
+  const generateLinkedInSearchUrl = (inventorName: string, searchQuery: string): string => {
+    // Clean up the inventor name
+    const cleanName = inventorName.replace(/[^\w\s]/g, '').trim();
+    
+    // Extract a single keyword from the search query
+    const keyword = extractKeywordFromQuery(searchQuery);
+    
+    // Create focused search query: inventor name + keyword
+    const searchQueryString = encodeURIComponent(`${cleanName} ${keyword}`);
+    
+    // Try to point to the first result directly, fallback to search results page
+    return `https://www.linkedin.com/search/results/people/?keywords=${searchQueryString}&origin=GLOBAL_SEARCH_HEADER`;
+  };
+
   const handleCreateQuery = async () => {
     if (!newQuery.trim()) return;
     
@@ -430,7 +455,12 @@ const Watchlist = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => window.open(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(inventor.name)}`, '_blank')}
+                          onClick={() => {
+                            // Use the associated patent's title as context for LinkedIn search
+                            const contextKeyword = inventor.associated_patent_id ? "patent" : "inventor";
+                            const searchUrl = generateLinkedInSearchUrl(inventor.name, contextKeyword);
+                            window.open(searchUrl, '_blank');
+                          }}
                         >
                           <Linkedin className="h-4 w-4 mr-2" />
                           Find on LinkedIn
