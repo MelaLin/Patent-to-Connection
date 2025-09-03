@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:3000', 'https://patentforge-pcxichiix-melalins-projects.vercel.app', 'https://patentforge-4hyf4ouu8-melalins-projects.vercel.app'],
+  origin: ['http://localhost:8080', 'http://localhost:3000', 'https://patentforge-pcxichiix-melalins-projects.vercel.app', 'https://patentforge-4hyf4ouu8-melalins-projects.vercel.app', 'https://patentforge-sigma.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'email', 'Authorization']
