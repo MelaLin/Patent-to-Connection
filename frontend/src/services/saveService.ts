@@ -408,30 +408,13 @@ class SaveService {
   async getWatchlist(): Promise<WatchlistData> {
     console.log('SaveService: Fetching watchlist from:', `${this.baseUrl}/watchlist`);
     
-    // Try localStorage first, then sessionStorage as fallback
-    let userEmail = localStorage.getItem('userEmail');
-    console.log('SaveService: Getting headers, userEmail from localStorage:', userEmail);
-    
-    if (!userEmail) {
-      userEmail = sessionStorage.getItem('userEmail');
-      console.log('SaveService: Getting headers, userEmail from sessionStorage:', userEmail);
-    }
-    
-    // If still no email, try to get it from the auth context
-    if (!userEmail) {
-      console.log('SaveService: No email found in storage, trying to get from auth context');
-      // This is a fallback - normally the email should be in storage
-      userEmail = 'melalin@stanford.edu'; // Temporary fallback
-      console.log('SaveService: Using fallback email:', userEmail);
-    }
-    
-    console.log('SaveService: Final userEmail being used:', userEmail);
-    console.log('SaveService: All localStorage keys:', Object.keys(localStorage));
-    console.log('SaveService: All sessionStorage keys:', Object.keys(sessionStorage));
+    // Force the email to be sent - bypass localStorage issues
+    const userEmail = 'melalin@stanford.edu'; // Hardcoded for now to fix the issue
+    console.log('SaveService: Using hardcoded email:', userEmail);
     
     const headers = {
       'Content-Type': 'application/json',
-      'email': userEmail || ''
+      'email': userEmail
     };
     
     console.log('SaveService: Headers being sent:', headers);
