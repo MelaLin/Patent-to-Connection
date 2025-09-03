@@ -201,22 +201,11 @@ const Watchlist = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
-      {/* Debug Info */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h3 className="font-semibold text-yellow-800">Debug Info:</h3>
-        <p className="text-sm text-yellow-700">
-          Loading: {loading.toString()}<br/>
-          Patents: {watchlistData.patents.length}<br/>
-          Queries: {watchlistData.queries.length}<br/>
-          Inventors: {watchlistData.inventors.length}
-        </p>
-      </div>
-      
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Watchlist</h1>
         <p className="text-muted-foreground">
-          Manage your saved queries, patents, and alerts
+          Manage your saved queries, patents, and inventors
         </p>
       </div>
 
@@ -428,7 +417,7 @@ const Watchlist = () => {
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {inventor.linkedin_url && (
+                      {inventor.linkedin_url ? (
                         <Button 
                           size="sm" 
                           variant="outline"
@@ -436,6 +425,15 @@ const Watchlist = () => {
                         >
                           <Linkedin className="h-4 w-4 mr-2" />
                           LinkedIn
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => window.open(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(inventor.name)}`, '_blank')}
+                        >
+                          <Linkedin className="h-4 w-4 mr-2" />
+                          Find on LinkedIn
                         </Button>
                       )}
                     </div>
