@@ -79,6 +79,7 @@ class SaveService {
     }
     
     console.log('SaveService: Using email for request:', userEmail);
+    console.log('SaveService: Vercel deployment test - headers being sent');
     
     return {
       'Content-Type': 'application/json',
