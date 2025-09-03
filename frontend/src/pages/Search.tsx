@@ -91,24 +91,33 @@ const Search = () => {
 
       const data = await response.json();
       console.log('API Response:', data);
+      console.log('API Response results length:', data.results?.length);
+      console.log('API Response hasMore:', data.hasMore);
       
       // Check if data.results exists and is an array
       if (data.results && Array.isArray(data.results)) {
         // Sort patents by publication date (most recent first)
         const sortedPatents = sortPatentsByDate(data.results);
+        console.log('Sorted patents length:', sortedPatents.length);
         
         if (offset === 0) {
           // New search - replace results
           setPatents(sortedPatents);
+          console.log('Replaced patents, new count:', sortedPatents.length);
         } else {
           // Load more - append results
-          setPatents(prev => [...prev, ...sortedPatents]);
+          setPatents(prev => {
+            const newPatents = [...prev, ...sortedPatents];
+            console.log('Appended patents, total count:', newPatents.length);
+            return newPatents;
+          });
         }
         
         // Check if there are more results - use backend's hasMore field
         const hasMore = data.hasMore || sortedPatents.length === 10;
         setHasMoreResults(hasMore);
         console.log(`Pagination debug: ${sortedPatents.length} results, total: ${data.total}, offset: ${offset}, hasMore: ${hasMore}`);
+        console.log(`Backend hasMore: ${data.hasMore}, sortedPatents.length === 10: ${sortedPatents.length === 10}`);
         
         console.log(`Found ${sortedPatents.length} patents, sorted by date`);
       } else {
