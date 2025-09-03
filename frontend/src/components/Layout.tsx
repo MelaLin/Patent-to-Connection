@@ -1,5 +1,5 @@
 import { Link, useLocation, Routes, Route, Navigate } from "react-router-dom";
-import { Search, Bookmark, FileText, Menu, X, LogOut, User } from "lucide-react";
+import { Search as SearchIcon, Bookmark, FileText, Menu, X, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -13,7 +13,7 @@ const navigation = [
   {
     name: "Search Patents",
     href: "/search",
-    icon: Search,
+    icon: SearchIcon,
   },
   {
     name: "Watchlist",
@@ -61,7 +61,7 @@ export function Layout() {
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary">
-                <Search className="h-4 w-4 text-white" />
+                <SearchIcon className="h-4 w-4 text-white" />
               </div>
               <span className="text-brand text-xl font-bold">Patent Scout</span>
             </Link>

@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '@/services/authService';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,12 +28,12 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const user = await authService.login(email);
+      const success = await login(email);
       
-      if (user) {
+      if (success) {
         toast({
           title: "Welcome!",
-          description: `Logged in as ${user.name}`,
+          description: "Successfully logged in!",
         });
         navigate('/search');
       } else {

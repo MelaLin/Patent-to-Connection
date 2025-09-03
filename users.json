@@ -1,32 +1,23 @@
 [
   {
-    "id": "6e0d2a54-996c-4faa-8683-9967e95c7c3f",
+    "id": "550e8400-e29b-41d4-a716-446655440001",
     "email": "john@yourvc.com",
     "name": "John Smith",
-    "serpapi_key": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz",
-    "created_at": "2025-09-03T01:21:04.232Z",
-    "is_active": true,
-    "deployment_note": "Updated for team access",
-    "last_updated": "2025-09-03T01:38:00.000Z"
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "is_active": true
   },
   {
-    "id": "b3dba761-33dd-4602-8052-8c37eff076e4",
+    "id": "550e8400-e29b-41d4-a716-446655440002", 
     "email": "sarah@yourvc.com",
     "name": "Sarah Johnson",
-    "serpapi_key": "xyz987wvu654tsr321qpo098nml765kji432hgf876edc210ba",
-    "created_at": "2025-09-03T01:21:04.237Z",
-    "is_active": true,
-    "deployment_note": "Updated for team access",
-    "last_updated": "2025-09-03T01:38:00.000Z"
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "is_active": true
   },
   {
-    "id": "e94530bd-e7cd-4798-8b42-708c8ef22c79",
-    "email": "mike@yourvc.com",
+    "id": "550e8400-e29b-41d4-a716-446655440003",
+    "email": "mike@yourvc.com", 
     "name": "Mike Chen",
-    "serpapi_key": "def456ghi789jkl012mno345pqr678stu901vwx234yz567abc",
-    "created_at": "2025-09-03T01:21:04.237Z",
-    "is_active": true,
-    "deployment_note": "Updated for team access",
-    "last_updated": "2025-09-03-03T01:38:00.000Z"
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "is_active": true
   }
 ]

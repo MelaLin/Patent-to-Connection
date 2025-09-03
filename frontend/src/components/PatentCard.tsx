@@ -7,7 +7,7 @@ import { saveService, PatentSaveData } from "@/services/saveService";
 import { useToast } from "@/hooks/use-toast";
 
 interface Patent {
-  patent_id: string;
+  patent_id?: string;
   title: string;
   abstract: string;
   assignee: string;

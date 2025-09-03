@@ -16,8 +16,21 @@ app.use(express.json());
 const USERS_FILE = path.join(__dirname, 'users.json');
 const USER_DATA_DIR = path.join(__dirname, 'user_data');
 
-// SerpAPI configuration
+// SerpAPI configuration - use environment variables for security
 const SERPAPI_BASE_URL = 'https://serpapi.com/search.json';
+
+// Get SerpAPI key from environment variable
+function getUserSerpAPIKey(userEmail) {
+  // Map user emails to environment variable names
+  const keyMapping = {
+    'john@yourvc.com': process.env.SERPAPI_KEY_JOHN,
+    'sarah@yourvc.com': process.env.SERPAPI_KEY_SARAH,
+    'mike@yourvc.com': process.env.SERPAPI_KEY_MIKE,
+    // Add more users as needed
+  };
+  
+  return keyMapping[userEmail] || process.env.SERPAPI_KEY_DEFAULT;
+}
 
 // Generate UUID
 function generateUUID() {
@@ -296,7 +309,7 @@ app.get('/api/theses/starred', authenticateUser, async (req, res) => {
 app.get('/api/patents/search/serpapi', authenticateUser, async (req, res) => {
   try {
     const { query, limit = '10', offset = '0' } = req.query;
-    const userSerpAPIKey = req.user.serpapi_key;
+    const userSerpAPIKey = getUserSerpAPIKey(req.user.email);
     
     if (!userSerpAPIKey || userSerpAPIKey === 'YOUR_SERPAPI_KEY_1') {
       // Provide fallback data for testing

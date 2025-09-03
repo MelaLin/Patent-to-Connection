@@ -6,10 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
 import Login from "./pages/Login";
-import Search from "./pages/Search";
-import Watchlist from "./pages/Watchlist";
-import Theses from "./pages/Theses";
-import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 

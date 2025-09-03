@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { SearchBar } from "@/components/SearchBar";
-import { FilterBar } from "@/components/FilterBar";
 import { PatentCard } from "@/components/PatentCard";
 import { PatentDrawer } from "@/components/PatentDrawer";
 import { Button } from "@/components/ui/button";
@@ -29,11 +28,6 @@ interface Patent {
   google_patents_url?: string;
   pdf?: string;
   alignment_score?: number;
-}
-
-interface Filters {
-  yearRange: [number, number];
-  jurisdiction: string;
 }
 
 interface SearchResponse {
@@ -79,7 +73,7 @@ const Search = () => {
     }
   }, [alignmentThreshold, sortBy, starredThesis]);
 
-    // Sort patents by publication date (most recent first)
+  // Sort patents by publication date (most recent first)
   const sortPatentsByDate = (patents: Patent[]): Patent[] => {
     return [...patents].sort((a, b) => {
       const dateA = a.publication_date ? new Date(a.publication_date).getTime() : 0;
@@ -297,7 +291,7 @@ const Search = () => {
   };
 
   const EmptyState = () => (
-    <Card className="patent-card p-8 text-center">
+    <Card className="p-8 text-center">
       <div className="flex flex-col items-center gap-4">
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Lightbulb className="h-8 w-8" />
@@ -330,7 +324,7 @@ const Search = () => {
   );
 
   const ErrorState = ({ message }: { message: string }) => (
-    <Card className="patent-card p-8 text-center">
+    <Card className="p-8 text-center">
       <div className="flex flex-col items-center gap-4">
         <AlertCircle className="h-8 w-8 text-red-500" />
         <span className="text-lg font-medium text-red-600">Search Error</span>
@@ -341,7 +335,7 @@ const Search = () => {
   );
 
   const NoResultsState = () => (
-    <Card className="patent-card p-8 text-center">
+    <Card className="p-8 text-center">
       <div className="flex flex-col items-center gap-4">
         <Lightbulb className="h-8 w-8 text-muted-foreground" />
         <span className="text-lg font-medium">No patents found</span>

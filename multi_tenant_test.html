@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Patent Scout - Multi-Tenant Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔬 Patent Scout - Multi-Tenant System Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Backend Health Check</h2>
+        <button onclick="testHealth()">Test Backend Health</button>
+        <div id="health-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. User Authentication Test</h2>
+        <p>Test with your team member emails:</p>
+        <button onclick="testAuth('john@yourvc.com')">Test John</button>
+        <button onclick="testAuth('sarah@yourvc.com')">Test Sarah</button>
+        <button onclick="testAuth('mike@yourvc.com')">Test Mike</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Data Isolation Test</h2>
+        <p>Test saving data for different users:</p>
+        <button onclick="testSavePatent('john@yourvc.com')">Save Patent for John</button>
+        <button onclick="testSavePatent('sarah@yourvc.com')">Save Patent for Sarah</button>
+        <div id="save-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Frontend Test</h2>
+        <p>Your frontend is deployed at:</p>
+        <a href="https://patentforge-4hyf4ouu8-melalins-projects.vercel.app" target="_blank">
+            https://patentforge-4hyf4ouu8-melalins-projects.vercel.app
+        </a>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://patent-forge-backend.onrender.com/api';
+
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                const data = await response.json();
+                resultDiv.innerHTML = `<pre class="success">✅ Backend is healthy: ${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<pre class="error">❌ Backend error: ${error.message}</pre>`;
+            }
+        }
+
+        async function testAuth(email) {
+            const resultDiv = document.getElementById('auth-result');
+            try {
+                const response = await fetch(`${BACKEND_URL}/user/profile`, {
+                    headers: { 'email': email }
+                });
+                const data = await response.json();
+                if (data.error) {
+                    resultDiv.innerHTML = `<pre class="error">❌ Auth failed for ${email}: ${data.error}</pre>`;
+                } else {
+                    resultDiv.innerHTML = `<pre class="success">✅ Auth successful for ${email}: ${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<pre class="error">❌ Auth error for ${email}: ${error.message}</pre>`;
+            }
+        }
+
+        async function testSavePatent(email) {
+            const resultDiv = document.getElementById('save-result');
+            try {
+                const patentData = {
+                    title: `Test Patent for ${email}`,
+                    abstract: 'This is a test patent to verify data isolation',
+                    assignee: 'Test Company',
+                    inventors: [{ name: 'Test Inventor' }]
+                };
+
+                const response = await fetch(`${BACKEND_URL}/watchlist/patents`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'email': email
+                    },
+                    body: JSON.stringify(patentData)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    resultDiv.innerHTML = `<pre class="success">✅ Patent saved for ${email}: ${JSON.stringify(data.data, null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML = `<pre class="error">❌ Failed to save patent for ${email}: ${data.error}</pre>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<pre class="error">❌ Save error for ${email}: ${error.message}</pre>`;
+            }
+        }
+    </script>
+</body>
+</html>
