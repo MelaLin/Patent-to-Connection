@@ -56,6 +56,7 @@ function getUserSerpAPIKey(userEmail) {
   const keyMapping = {
     'melalin@stanford.edu': process.env.SERPAPI_KEY_MELA1,
     'melalin05@gmail.com': process.env.SERPAPI_KEY_MELATEST,
+    'michael@factore.com': process.env.SERPAPI_KEY_MICHAEL,
     // Add more users as needed
   };
   
@@ -210,12 +211,44 @@ async function getUserByEmail(email) {
   return users.find(user => user.email === email);
 }
 
+// Enhanced data persistence with backup and recovery
 async function getUserData(userId) {
   const userDataFile = path.join(USER_DATA_DIR, `${userId}.json`);
+  const backupFile = path.join(USER_DATA_DIR, `${userId}.backup.json`);
+  
   try {
+    // Try to read the main file first
     const data = await fs.readFile(userDataFile, 'utf8');
-    return JSON.parse(data);
+    const parsedData = JSON.parse(data);
+    
+    // Validate the data structure
+    if (!parsedData.patents || !parsedData.queries || !parsedData.inventors || !parsedData.theses) {
+      console.log(`Invalid data structure for user ${userId}, using backup or default`);
+      throw new Error('Invalid data structure');
+    }
+    
+    console.log(`Successfully loaded data for user ${userId}: ${parsedData.patents.length} patents, ${parsedData.queries.length} queries, ${parsedData.inventors.length} inventors, ${parsedData.theses.length} theses`);
+    return parsedData;
   } catch (error) {
+    console.log(`Failed to read main data file for user ${userId}:`, error.message);
+    
+    // Try to read from backup
+    try {
+      const backupData = await fs.readFile(backupFile, 'utf8');
+      const parsedBackup = JSON.parse(backupData);
+      
+      if (parsedBackup.patents && parsedBackup.queries && parsedBackup.inventors && parsedBackup.theses) {
+        console.log(`Restored data from backup for user ${userId}`);
+        // Restore the main file from backup
+        await saveUserData(userId, parsedBackup);
+        return parsedBackup;
+      }
+    } catch (backupError) {
+      console.log(`Backup file also failed for user ${userId}:`, backupError.message);
+    }
+    
+    // Return default structure if both files fail
+    console.log(`Using default data structure for user ${userId}`);
     return {
       patents: [],
       queries: [],
@@ -227,7 +260,31 @@ async function getUserData(userId) {
 
 async function saveUserData(userId, data) {
   const userDataFile = path.join(USER_DATA_DIR, `${userId}.json`);
-  await fs.writeFile(userDataFile, JSON.stringify(data, null, 2));
+  const backupFile = path.join(USER_DATA_DIR, `${userId}.backup.json`);
+  
+  try {
+    // Ensure the user_data directory exists
+    await fs.mkdir(USER_DATA_DIR, { recursive: true });
+    
+    // Validate data structure before saving
+    if (!data.patents || !data.queries || !data.inventors || !data.theses) {
+      console.error(`Invalid data structure for user ${userId}, cannot save`);
+      throw new Error('Invalid data structure');
+    }
+    
+    // Create backup first
+    const backupData = JSON.stringify(data, null, 2);
+    await fs.writeFile(backupFile, backupData);
+    
+    // Then save to main file
+    const mainData = JSON.stringify(data, null, 2);
+    await fs.writeFile(userDataFile, mainData);
+    
+    console.log(`Successfully saved data for user ${userId}: ${data.patents.length} patents, ${data.queries.length} queries, ${data.inventors.length} inventors, ${data.theses.length} theses`);
+  } catch (error) {
+    console.error(`Failed to save data for user ${userId}:`, error.message);
+    throw error;
+  }
 }
 
 // Authentication middleware
