@@ -215,42 +215,22 @@ async function getUserByEmail(email) {
 
 // Enhanced data persistence with backup and recovery
 async function getUserData(userId) {
-  const userDataFile = path.join(USER_DATA_DIR, `${userId}.json`);
-  const backupFile = path.join(USER_DATA_DIR, `${userId}.backup.json`);
-  
   try {
-    // Try to read the main file first
-    const data = await fs.readFile(userDataFile, 'utf8');
-    const parsedData = JSON.parse(data);
+    // Get data from Supabase database
+    const theses = await dbService.getTheses(userId);
+    const patents = await dbService.getPatents(userId);
+    const watchlistData = await dbService.getWatchlistData(userId);
     
-    // Validate the data structure
-    if (!parsedData.patents || !parsedData.queries || !parsedData.inventors || !parsedData.theses) {
-      console.log(`Invalid data structure for user ${userId}, using backup or default`);
-      throw new Error('Invalid data structure');
-    }
-    
-    console.log(`Successfully loaded data for user ${userId}: ${parsedData.patents.length} patents, ${parsedData.queries.length} queries, ${parsedData.inventors.length} inventors, ${parsedData.theses.length} theses`);
-    return parsedData;
+    return {
+      patents: patents,
+      queries: watchlistData.queries,
+      inventors: watchlistData.inventors,
+      theses: theses
+    };
   } catch (error) {
-    console.log(`Failed to read main data file for user ${userId}:`, error.message);
+    console.error(`Failed to get user data from database for user ${userId}:`, error.message);
     
-    // Try to read from backup
-    try {
-      const backupData = await fs.readFile(backupFile, 'utf8');
-      const parsedBackup = JSON.parse(backupData);
-      
-      if (parsedBackup.patents && parsedBackup.queries && parsedBackup.inventors && parsedBackup.theses) {
-        console.log(`Restored data from backup for user ${userId}`);
-        // Restore the main file from backup
-        await saveUserData(userId, parsedBackup);
-        return parsedBackup;
-      }
-    } catch (backupError) {
-      console.log(`Backup file also failed for user ${userId}:`, backupError.message);
-    }
-    
-    // Return default structure if both files fail
-    console.log(`Using default data structure for user ${userId}`);
+    // Return default structure if database fails
     return {
       patents: [],
       queries: [],
