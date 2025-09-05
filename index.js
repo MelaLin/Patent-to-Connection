@@ -8,10 +8,7 @@ const dbService = require('./databaseServiceRest');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
-
-// Initialize database on startup
-initializeDatabase().catch(console.error);
+const PORT = process.env.PORT || 10000;
 
 // Middleware
 app.use(cors({
@@ -685,13 +682,18 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Initialize and start server
-initializeUserSystem().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Multi-tenant server running on port ${PORT}`);
-    console.log(`Users file: ${USERS_FILE}`);
-    console.log(`User data directory: ${USER_DATA_DIR}`);
+initializeDatabase()
+  .then(() => {
+    return initializeUserSystem();
+  })
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`Users file: ${USERS_FILE}`);
+      console.log(`User data directory: ${USER_DATA_DIR}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ Failed to start server:", err.message);
+    process.exit(1);
   });
-}).catch(error => {
-  console.error('Failed to initialize multi-tenant system:', error);
-  process.exit(1);
-});
