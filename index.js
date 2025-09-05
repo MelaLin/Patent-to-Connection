@@ -3,10 +3,15 @@ const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
+const { initializeDatabase } = require('./database');
+const dbService = require('./databaseService');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Initialize database on startup
+initializeDatabase().catch(console.error);
 
 // Middleware
 app.use(cors({
@@ -289,29 +294,28 @@ async function saveUserData(userId, data) {
 
 // Authentication middleware
 async function authenticateUser(req, res, next) {
-  // Try both header formats for maximum compatibility
-  let email = req.headers['x-user-email'] || req.headers['X-User-Email'] || req.headers.email;
-  
-  console.log('Backend: authenticateUser called with email header:', email);
-  console.log('Backend: All headers received:', Object.keys(req.headers));
-  console.log('Backend: X-User-Email header:', req.headers['x-user-email']);
-  console.log('Backend: email header:', req.headers.email);
-  
-  if (!email) {
-    console.log('Backend: No email header found, returning 401');
-    return res.status(401).json({ error: 'Email required' });
+  try {
+    // Try both header formats for maximum compatibility
+    let email = req.headers['x-user-email'] || req.headers['X-User-Email'] || req.headers.email;
+    
+    console.log('Backend: authenticateUser called with email header:', email);
+    
+    if (!email) {
+      console.log('Backend: No email header found, returning 401');
+      return res.status(401).json({ error: 'Email required' });
+    }
+    
+    // Get or create user in Supabase
+    const user = await dbService.getOrCreateUser(email, email.split('@')[0]);
+    
+    console.log('Backend: User authenticated successfully:', user.email);
+    req.user = user;
+    req.userEmail = email;
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(500).json({ error: 'Authentication failed' });
   }
-  
-  const user = await getUserByEmail(email);
-  if (!user) {
-    console.log('Backend: User not found for email:', email);
-    return res.status(401).json({ error: 'User not found' });
-  }
-  
-  console.log('Backend: User authenticated successfully:', user.email);
-  req.user = user;
-  req.userEmail = email; // Add this for consistency
-  next();
 }
 
 // API Routes with user isolation
@@ -324,106 +328,118 @@ app.get('/api/user/profile', authenticateUser, async (req, res) => {
 });
 
 app.get('/api/watchlist', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  res.json(userData);
+  try {
+    const watchlistData = await dbService.getWatchlistData(req.user.id);
+    res.json(watchlistData);
+  } catch (error) {
+    console.error('Error fetching watchlist:', error);
+    res.status(500).json({ error: 'Failed to fetch watchlist' });
+  }
 });
 
 app.post('/api/watchlist/patents', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const newPatent = {
-    ...req.body,
-    id: generateUUID(),
-    user_id: req.user.id,
-    saved_at: new Date().toISOString()
-  };
-  
-  userData.patents.push(newPatent);
-  await saveUserData(req.user.id, userData);
-  
-  res.json({ success: true, data: newPatent });
+  try {
+    const patentData = {
+      patent_id: req.body.patent_id || req.body.id || Date.now().toString(),
+      title: req.body.title,
+      abstract: req.body.abstract,
+      assignee: req.body.assignee,
+      inventors: req.body.inventors || [],
+      link: req.body.link,
+      date_filed: req.body.date_filed
+    };
+    
+    const patent = await dbService.createPatent(req.user.id, patentData);
+    await dbService.addToWatchlist(req.user.id, 'patent', patentData.patent_id, patentData);
+    
+    res.json({ success: true, data: patent });
+  } catch (error) {
+    console.error('Error saving patent:', error);
+    res.status(500).json({ error: 'Failed to save patent' });
+  }
 });
 
 app.post('/api/watchlist/queries', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const newQuery = {
-    ...req.body,
-    id: generateUUID(),
-    user_id: req.user.id,
-    created_at: new Date().toISOString()
-  };
-  
-  userData.queries.push(newQuery);
-  await saveUserData(req.user.id, userData);
-  
-  res.json({ success: true, data: newQuery });
+  try {
+    const query = req.body.query || req.body.text;
+    await dbService.addToWatchlist(req.user.id, 'query', query, req.body);
+    
+    res.json({ success: true, data: { query, id: Date.now().toString() } });
+  } catch (error) {
+    console.error('Error saving query:', error);
+    res.status(500).json({ error: 'Failed to save query' });
+  }
 });
 
 app.post('/api/watchlist/inventors', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const newInventor = {
-    ...req.body,
-    id: generateUUID(),
-    user_id: req.user.id,
-    saved_at: new Date().toISOString()
-  };
-  
-  userData.inventors.push(newInventor);
-  await saveUserData(req.user.id, userData);
-  
-  res.json({ success: true, data: newInventor });
+  try {
+    const inventorName = req.body.name || req.body.inventor;
+    const inventorData = {
+      linkedin_url: req.body.linkedin_url,
+      associated_patent_id: req.body.associated_patent_id
+    };
+    
+    await dbService.addToWatchlist(req.user.id, 'inventor', inventorName, inventorData);
+    
+    res.json({ success: true, data: { name: inventorName, id: Date.now().toString() } });
+  } catch (error) {
+    console.error('Error saving inventor:', error);
+    res.status(500).json({ error: 'Failed to save inventor' });
+  }
 });
 
 // Thesis management
 app.get('/api/theses', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  res.json(userData.theses || []);
+  try {
+    const theses = await dbService.getTheses(req.user.id);
+    res.json(theses);
+  } catch (error) {
+    console.error('Error fetching theses:', error);
+    res.status(500).json({ error: 'Failed to fetch theses' });
+  }
 });
 
 app.post('/api/theses', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const newThesis = {
-    ...req.body,
-    id: generateUUID(),
-    user_id: req.user.id,
-    starred: false,
-    created_at: new Date().toISOString()
-  };
-  
-  if (!userData.theses) userData.theses = [];
-  userData.theses.push(newThesis);
-  await saveUserData(req.user.id, userData);
-  
-  res.json({ success: true, data: newThesis });
+  try {
+    const { title, content } = req.body;
+    const thesis = await dbService.createThesis(req.user.id, title, content);
+    res.json({ success: true, data: thesis });
+  } catch (error) {
+    console.error('Error creating thesis:', error);
+    res.status(500).json({ error: 'Failed to create thesis' });
+  }
 });
 
 app.post('/api/theses/:id/star', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const { id } = req.params;
-  
-  if (!userData.theses) userData.theses = [];
-  
-  // Unstar all theses first
-  userData.theses.forEach(thesis => {
-    thesis.starred = false;
-  });
-  
-  // Star the selected thesis
-  const thesisIndex = userData.theses.findIndex(thesis => thesis.id === id);
-  if (thesisIndex !== -1) {
-    userData.theses[thesisIndex].starred = true;
+  try {
+    const { id } = req.params;
+    
+    // First unstar all theses
+    const allTheses = await dbService.getTheses(req.user.id);
+    for (const thesis of allTheses) {
+      await dbService.updateThesisStarred(req.user.id, thesis.id, false);
+    }
+    
+    // Then star the selected thesis
+    const starredThesis = await dbService.updateThesisStarred(req.user.id, id, true);
+    
+    res.json({ success: true, data: starredThesis });
+  } catch (error) {
+    console.error('Error starring thesis:', error);
+    res.status(500).json({ error: 'Failed to star thesis' });
   }
-  
-  await saveUserData(req.user.id, userData);
-  
-  res.json({ success: true, data: userData.theses[thesisIndex] });
 });
 
 app.get('/api/theses/starred', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const starredThesis = userData.theses?.find(thesis => thesis.starred) || null;
-  
-  res.json({ success: true, data: starredThesis });
+  try {
+    const starredThesis = await dbService.getStarredThesis(req.user.id);
+    res.json({ success: true, data: starredThesis });
+  } catch (error) {
+    console.error('Error fetching starred thesis:', error);
+    res.status(500).json({ error: 'Failed to fetch starred thesis' });
+  }
 });
+
 
 // Search with user's SerpAPI key
 app.get('/api/patents/search/serpapi', authenticateUser, async (req, res) => {
@@ -600,66 +616,72 @@ app.get('/api/patents/search/serpapi', authenticateUser, async (req, res) => {
 
 // Delete endpoints
 app.delete('/api/watchlist/patents/:id', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const { id } = req.params;
-  
-  const patentIndex = userData.patents.findIndex(patent => patent.id === id);
-  if (patentIndex !== -1) {
-    userData.patents.splice(patentIndex, 1);
-    await saveUserData(req.user.id, userData);
+  try {
+    const { id } = req.params;
+    await dbService.deleteWatchlistItem(req.user.id, id);
+    res.json({ success: true, message: 'Patent deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting patent:', error);
+    res.status(500).json({ error: 'Failed to delete patent' });
   }
-  
-  res.json({ success: true, message: 'Patent deleted successfully' });
 });
 
 app.delete('/api/watchlist/queries/:id', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const { id } = req.params;
-  
-  const queryIndex = userData.queries.findIndex(query => query.id === id);
-  if (queryIndex !== -1) {
-    userData.queries.splice(queryIndex, 1);
-    await saveUserData(req.user.id, userData);
+  try {
+    const { id } = req.params;
+    await dbService.deleteWatchlistItem(req.user.id, id);
+    res.json({ success: true, message: 'Query deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting query:', error);
+    res.status(500).json({ error: 'Failed to delete query' });
   }
-  
-  res.json({ success: true, message: 'Query deleted successfully' });
 });
 
 app.delete('/api/watchlist/inventors/:id', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const { id } = req.params;
-  
-  const inventorIndex = userData.inventors.findIndex(inventor => inventor.id === id);
-  if (inventorIndex !== -1) {
-    userData.inventors.splice(inventorIndex, 1);
-    await saveUserData(req.user.id, userData);
+  try {
+    const { id } = req.params;
+    await dbService.deleteWatchlistItem(req.user.id, id);
+    res.json({ success: true, message: 'Inventor deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting inventor:', error);
+    res.status(500).json({ error: 'Failed to delete inventor' });
   }
-  
-  res.json({ success: true, message: 'Inventor deleted successfully' });
 });
 
 app.delete('/api/theses/:id', authenticateUser, async (req, res) => {
-  const userData = await getUserData(req.user.id);
-  const { id } = req.params;
-  
-  if (!userData.theses) userData.theses = [];
-  
-  const thesisIndex = userData.theses.findIndex(thesis => thesis.id === id);
-  if (thesisIndex !== -1) {
-    userData.theses.splice(thesisIndex, 1);
-    await saveUserData(req.user.id, userData);
+  try {
+    const { id } = req.params;
+    await dbService.deleteThesis(req.user.id, id);
+    res.json({ success: true, message: 'Thesis deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting thesis:', error);
+    res.status(500).json({ error: 'Failed to delete thesis' });
   }
-  
-  res.json({ success: true, message: 'Thesis deleted successfully' });
 });
 
+
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString(),
-    multi_tenant: true
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    const { pool } = require('./database');
+    await pool.query('SELECT 1');
+    
+    res.json({ 
+      status: 'healthy',
+      database: 'connected',
+      timestamp: new Date().toISOString(),
+      multi_tenant: true
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(500).json({ 
+      status: 'unhealthy',
+      database: 'disconnected',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Initialize and start server
