@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
 const { initializeDatabase } = require('./database');
-const dbService = require('./databaseService');
+const dbService = require('./databaseServiceRest');
 require('dotenv').config();
 
 const app = express();
