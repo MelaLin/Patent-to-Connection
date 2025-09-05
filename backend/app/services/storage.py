@@ -14,6 +14,7 @@ class StorageService:
         self.data_dir = Path("data")
         self.use_database = False  # Force file storage for now
         
+        # additional test comment for commit 
         # Create data directory
         self.data_dir.mkdir(exist_ok=True)
         logger.info(f"Using file-based storage in {self.data_dir}")
